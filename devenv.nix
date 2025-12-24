@@ -9,7 +9,7 @@
 {
     packages = [
         pkgs.git
-        pkgs.diesel-cli
+        pkgs.sea-orm-cli
     ];
     languages = {
         rust.enable = true;
@@ -25,10 +25,14 @@
 
     services.postgres = {
         enable = true;
-        initialScript = ''
-            CREATE ROLE abyssal WITH LOGIN PASSWORD 'abyssal' CREATEDB;
-        '';
         listen_addresses = "127.0.0.1";
+        initialDatabases = [
+            {
+                name = "abyssal";
+                user = "abyssal";
+                pass = "abyssal";
+            }
+        ];
         port = 5432;
     };
 
