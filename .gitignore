@@ -30,3 +30,7 @@ devenv.local.yaml
 
 # pre-commit
 .pre-commit-config.yaml
+
+# Certificates
+client/abyssal/certs
+crates/abyssal/certs

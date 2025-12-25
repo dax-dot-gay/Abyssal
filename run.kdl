@@ -1,0 +1,14 @@
+layout {
+    pane split_direction="vertical" {
+        pane {
+            command "pnpm"
+            args "run" "dev"
+            cwd "client/abyssal"
+        }
+        pane {
+            command "cargo"
+            args "run"
+            cwd "crates/abyssal"
+        }
+    }
+}

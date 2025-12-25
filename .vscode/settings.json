@@ -11,5 +11,12 @@
             "username": "abyssal",
             "password": "abyssal"
         }
+    ],
+    "cssVariables.lookupFiles": [
+        "client/abyssal/**/*.css",
+        "client/abyssal/**/*.scss",
+        "client/abyssal/**/*.sass",
+        "client/abyssal/**/*.less",
+        "client/abyssal/node_modules/@mantine/core/styles.css"
     ]
 }
