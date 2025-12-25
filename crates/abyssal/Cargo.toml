@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = { workspace = true }
 bon = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 figment = { workspace = true, features = ["env", "toml"] }
@@ -18,5 +19,6 @@ sea-orm = { workspace = true, features = ["sqlx-postgres", "sqlx-sqlite", "proxy
 sea-orm-rocket = { workspace = true, features = ["rocket_okapi"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4", "serde", "fast-rng"] }
