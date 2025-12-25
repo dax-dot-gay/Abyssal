@@ -1,9 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["crates/abyssal", "crates/abyssal_common"]
+members = ["crates/abyssal", "crates/abyssal_common", "crates/abyssal_macros"]
 
 [workspace.dependencies]
 abyssal_common = { path = "./crates/abyssal_common", version = "*" }
+abyssal_macros = { path = "./crates/abyssal_macros", version = "*" }
+anyhow = "1.0.100"
 bon = "3.8.1"
 chrono = "0.4.42"
 figment = "0.10.19"
@@ -18,7 +20,6 @@ sea-orm = "1.1.19"
 sea-orm-rocket = "0.6.0"
 serde = "1.0.228"
 serde_json = "1.0.147"
+thiserror = "2.0.17"
 tokio = "1.48.0"
 uuid = "1.19.0"
-anyhow = "1.0.100"
-thiserror = "2.0.17"
