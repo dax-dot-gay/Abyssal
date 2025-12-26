@@ -1,0 +1,16 @@
+[server]
+address = "0.0.0.0"
+port = 5174
+secret_key = "Lcp8BBFL1hWxiMAoOQstl+tt9ntBlCdeoMpDlX5IMM8="
+
+[server.tls]
+key = "certs/key.pem"
+certs = "certs/cert.pem"
+
+[auth]
+admin_user = "admin"
+admin_password = "admin"
+
+[database]
+backend = "postgres"
+url = "postgresql://abyssal:abyssal@localhost:5432/abyssal"

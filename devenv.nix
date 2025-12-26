@@ -62,8 +62,6 @@
     };
 
     env = {
-        ABYSSAL_DB__BACKEND = "postgres";
-        ABYSSAL_DB__URL = "postgresql://abyssal:abyssal@localhost:5432/abyssal";
-        DATABASE_URL = config.env.ABYSSAL_DB__URL;
+        DATABASE_URL = "postgresql://abyssal:abyssal@localhost:5432/abyssal";
     };
 }

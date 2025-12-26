@@ -7,7 +7,7 @@ layout {
         }
         pane {
             command "cargo"
-            args "run"
+            args "run" "--" "--config" "abyssal.dev.toml"
             cwd "crates/abyssal"
         }
     }
