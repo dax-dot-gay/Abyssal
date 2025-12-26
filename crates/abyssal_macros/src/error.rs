@@ -32,8 +32,6 @@ fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Res
     let args = Error::from_attributes(&item.attrs)
         .or_else(|e| Err(syn::Error::new(Span::call_site(), e.to_string())))?;
 
-    println!("{args:?}");
-
     let fields = item.fields.clone();
     let Error {
         status: args_status,

@@ -1,44 +1,38 @@
-use std::ops::{Deref, DerefMut};
-
 use figment::Figment;
-use rocket_db_pools::{Database, Pool};
+use rbatis::{RBatis, table_sync::{self, ColumnMapper}};
+use rocket_db_pools::{Connection, Database};
 
 #[derive(Clone, Debug)]
-pub struct SeaPool(sea_orm::DatabaseConnection);
-
-impl Deref for SeaPool {
-    type Target = sea_orm::DatabaseConnection;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SeaPool {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-#[derive(Database)]
-#[database("sea_orm")]
-pub struct ORM(SeaPool);
+pub struct DatabasePool(RBatis);
 
 #[rocket::async_trait]
-impl Pool for SeaPool {
-    type Connection = sea_orm::DatabaseConnection;
+impl rocket_db_pools::Pool for DatabasePool {
+    type Connection = RBatis;
     type Error = crate::Error;
 
     async fn init(figment: &Figment) -> crate::Result<Self> {
-        let conf: rocket_db_pools::Config = figment.extract()?;
-        let pool = SeaPool(sea_orm::Database::connect(conf.url).await?);
-        Ok(pool)
+        let config: crate::types::config::DatabaseConfig = figment.extract()?;
+        let instance = RBatis::new();
+        let _mapper = match config.backend() {
+            crate::types::config::DatabaseBackend::Sqlite => {instance.init(rbdc_sqlite::SqliteDriver {}, &config.url())?; &table_sync::SqliteTableMapper{} as &dyn ColumnMapper},
+            crate::types::config::DatabaseBackend::Postgres => {instance.init(rbdc_pg::PostgresDriver {}, &config.url())?; &table_sync::PGTableMapper{} as &dyn ColumnMapper},
+            crate::types::config::DatabaseBackend::Mysql => {instance.init(rbdc_mysql::MysqlDriver {}, &config.url())?; &table_sync::MssqlTableMapper{} as &dyn ColumnMapper},
+        };
+
+        // TODO: Automatic table mapping
+
+        Ok(DatabasePool(instance))
     }
 
     async fn get(&self) -> crate::Result<Self::Connection> {
-        self.0.clone()
+        Ok(self.0.clone())
     }
 
-    async fn close(&self) -> () {
-        self.0.close().await.unwrap();
-    }
+    async fn close(&self) {}
 }
+
+#[derive(Database)]
+#[database("rbatis")]
+pub struct AbyssalDb(DatabasePool);
+
+pub type ORM = Connection<AbyssalDb>;

@@ -1,11 +1,11 @@
-use okapi::openapi3::OpenApi;
-use rocket::{Route, get, serde::json::Json};
-use rocket_okapi::{openapi, openapi_get_routes_spec, settings::OpenApiSettings};
+
+use rocket::{get, serde::json::Json};
+use rocket_okapi::{JsonSchema, openapi};
 use serde::{Deserialize, Serialize};
 
 use crate::export_routes;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 struct GetInfoResponse {
     pub version: String,
 }

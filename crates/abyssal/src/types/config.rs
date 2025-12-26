@@ -12,6 +12,7 @@ use figment::{
 use getset::CloneGetters;
 use rocket::data::{ByteUnit, Limits};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Clone, Debug, CloneGetters)]
 #[serde(rename_all = "snake_case")]
@@ -216,6 +217,14 @@ impl Config {
             .join(("tls", self.server().tls()))
             .join(("limits", Limits::from(self.server().limits())))
             .join(("full_config", self.clone()))
-            .join(("databases", vec![("sea_orm", vec![("url", self.database().url())])]))
+            .join((
+                "databases",
+                json!({
+                    "rbatis": {
+                        "url": self.database().url(),
+                        "backend": self.database().backend()
+                    }
+                }),
+            ))
     }
 }

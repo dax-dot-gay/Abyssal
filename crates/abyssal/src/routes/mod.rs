@@ -1,7 +1,6 @@
 use okapi::openapi3::OpenApi;
-use rocket::{Build, Rocket};
 use rocket_okapi::{
-    get_nested_endpoints_and_docs, mount_endpoints_and_merged_docs, settings::OpenApiSettings,
+    get_nested_endpoints_and_docs, settings::OpenApiSettings,
 };
 
 mod misc;

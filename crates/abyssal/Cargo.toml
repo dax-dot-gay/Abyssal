@@ -13,6 +13,10 @@ figment = { workspace = true, features = ["env", "toml"] }
 getset = { workspace = true }
 okapi = { workspace = true, features = ["impl_json_schema", "preserve_order"] }
 parking_lot = { workspace = true, features = ["arc_lock", "send_guard", "serde"] }
+rbatis = { workspace = true, features = ["rbatis-macro-driver"] }
+rbdc-mysql = { workspace = true, features = ["rbdc"] }
+rbdc-pg = { workspace = true, features = ["rbdc"] }
+rbdc-sqlite = { workspace = true, features = ["rbdc", "sqlite-bundled"] }
 rocket = { workspace = true, features = ["json", "secrets", "tls", "uuid"] }
 rocket_db_pools = { workspace = true }
 rocket_okapi = { workspace = true, features = [
@@ -24,23 +28,11 @@ rocket_okapi = { workspace = true, features = [
   "uuid"
 ] }
 rocket_ws = { workspace = true }
-sea-orm = { workspace = true, features = [
-  "proxy",
-  "runtime-tokio",
-  "sqlx-mysql",
-  "sqlx-sqlite",
-  "sqlx-postgres",
-  "with-json",
-  "with-bigdecimal",
-  "postgres-array", 
-  "postgres-vector"
-] }
 schemars = { workspace = true, features = [
-  "chrono04",
+  "chrono",
   "preserve_order",
-  "uuid1"
+  "uuid"
 ] }
-sea-query = {workspace = true}
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

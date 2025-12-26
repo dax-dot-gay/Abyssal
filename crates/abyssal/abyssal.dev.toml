@@ -12,5 +12,5 @@ admin_user = "admin"
 admin_password = "admin"
 
 [database]
-backend = "postgres"
-url = "postgresql://abyssal:abyssal@localhost:5432/abyssal"
+backend = "sqlite"
+url = "sqlite://abyssal.dev.db"
