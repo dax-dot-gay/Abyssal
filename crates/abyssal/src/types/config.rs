@@ -215,5 +215,7 @@ impl Config {
             .join(("secret_key", self.server().secret_key()))
             .join(("tls", self.server().tls()))
             .join(("limits", Limits::from(self.server().limits())))
+            .join(("full_config", self.clone()))
+            .join(("databases", vec![("sea_orm", vec![("url", self.database().url())])]))
     }
 }

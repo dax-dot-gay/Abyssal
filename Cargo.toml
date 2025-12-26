@@ -1,9 +1,8 @@
 [workspace]
 resolver = "3"
-members = ["crates/abyssal", "crates/abyssal_common", "crates/abyssal_macros"]
+members = ["crates/abyssal", "crates/abyssal_macros"]
 
 [workspace.dependencies]
-abyssal_common = { path = "./crates/abyssal_common", version = "*" }
 abyssal_macros = { path = "./crates/abyssal_macros", version = "*" }
 anyhow = "1.0.100"
 bon = "3.8.1"
@@ -15,9 +14,9 @@ rocket = "0.5.1"
 rocket_db_pools = "0.2.0"
 rocket_okapi = "0.9.0"
 rocket_ws = "0.1.1"
-schemars = "1.1.0"
-sea-orm = "1.1.19"
-sea-orm-rocket = "0.6.0"
+schemars = "1.2.0"
+sea-orm = {version = "=2.0.0-rc.22"}
+sea-query = {git = "https://github.com/SeaQL/sea-query.git", rev = "036d37c17ef1e37cb1bea4c468c4e7284e1b0e0b"}
 serde = "1.0.228"
 serde_json = "1.0.147"
 thiserror = "2.0.17"

@@ -8,7 +8,7 @@ abyssal_macros = { workspace = true }
 anyhow = { workspace = true }
 bon = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-clap = { workspace = true, features = ["cargo", "derive", "string", "env"] }
+clap = { workspace = true, features = ["cargo", "derive", "env", "string"] }
 figment = { workspace = true, features = ["env", "toml"] }
 getset = { workspace = true }
 okapi = { workspace = true, features = ["impl_json_schema", "preserve_order"] }
@@ -24,19 +24,23 @@ rocket_okapi = { workspace = true, features = [
   "uuid"
 ] }
 rocket_ws = { workspace = true }
+sea-orm = { workspace = true, features = [
+  "proxy",
+  "runtime-tokio",
+  "sqlx-mysql",
+  "sqlx-sqlite",
+  "sqlx-postgres",
+  "with-json",
+  "with-bigdecimal",
+  "postgres-array", 
+  "postgres-vector"
+] }
 schemars = { workspace = true, features = [
   "chrono04",
   "preserve_order",
   "uuid1"
 ] }
-sea-orm = { workspace = true, features = [
-  "proxy",
-  "runtime-tokio",
-  "sqlx-postgres",
-  "sqlx-sqlite",
-  "sqlx-mysql"
-] }
-sea-orm-rocket = { workspace = true, features = ["rocket_okapi"] }
+sea-query = {workspace = true}
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -176,7 +176,7 @@ pub fn impl_error(_: TokenStream, item: TokenStream) -> manyhow::Result<TokenStr
                 serde::json::Json
             };
 
-            #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, schemars::JsonSchema, Eq, PartialEq)]
+            #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
             pub struct #metadata_ident {
                 pub status: u16,
                 pub code: String,
