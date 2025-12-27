@@ -2044,9 +2044,9 @@ dependencies = [
 
 [[package]]
 name = "rbatis"
-version = "4.6.13"
+version = "4.6.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b288e7c15a83df28ad98db89a6f3541edcf65e71b14805e94f999975ae68bc3d"
+checksum = "495f142e09f5130d92147fa3e8314fcd3fcb4037cfabfb04356e2c4a1867a533"
 dependencies = [
  "async-trait",
  "dark-std",
@@ -2203,9 +2203,9 @@ dependencies = [
 
 [[package]]
 name = "rbdc-sqlite"
-version = "4.6.4"
+version = "4.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9e47c91f4498e15f7de365c51b8360f970320159479b3a4a3fccb7efe73f65b"
+checksum = "58d1b90b57aa9eb8946e9e0a0d79db142c757abe14655c9bef3be7b5deddb145"
 dependencies = [
  "atoi",
  "bytes",
