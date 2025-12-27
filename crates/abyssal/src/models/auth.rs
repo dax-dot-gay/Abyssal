@@ -3,7 +3,9 @@ use getset::{CloneGetters, Setters};
 use rbatis::rbdc::Uuid;
 use rbatis_derive::Schema;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, BoolFromInt};
 
+#[serde_as]
 #[derive(Clone, Debug, Serialize, Deserialize, Schema, CloneGetters, Setters)]
 #[schema(table(name = "local_users"))]
 #[getset(get_clone = "pub")]
@@ -23,6 +25,8 @@ pub struct LocalUser {
     groups: Vec<Uuid>,
 
     #[serde(default)]
+    #[serde_as(as = "BoolFromInt")]
+    #[field(sql_type = "INTEGER")]
     default_admin: bool
 }
 

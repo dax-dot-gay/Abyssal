@@ -24,7 +24,7 @@ fn launch_inner() -> Rocket<Build> {
         .attach(AdHoc::on_liftoff("Ensure admin user", |rck| Box::pin(async move {
             let db = rck.state::<util::AbyssalDb>().unwrap().db();
             let config = rck.state::<types::Config>().unwrap();
-            if let Ok(Some(existing)) = models::LocalUser::select_one_with_username(&db, config.authentication().admin_user()).await {
+            if let Some(existing) = models::LocalUser::select_one_with_username(&db, config.authentication().admin_user()).await.unwrap() {
                 if !existing.default_admin() {
                     panic!("Another user with the default administrator's username already exists!");
                 }

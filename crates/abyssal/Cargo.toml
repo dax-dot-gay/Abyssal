@@ -41,3 +41,4 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["fast-rng", "serde", "v4"] }
 rbatis-derive = {workspace = true}
+serde_with = "3.16.1"
