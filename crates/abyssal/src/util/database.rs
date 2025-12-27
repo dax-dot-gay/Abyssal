@@ -20,7 +20,7 @@ impl rocket_db_pools::Pool for DatabasePool {
             crate::types::config::DatabaseBackend::Mysql => {instance.init(rbdc_mysql::MysqlDriver {}, &config.url())?; &table_sync::MssqlTableMapper{} as &dyn ColumnMapper},
         };
 
-        models::AuthUser::sync(&instance, mapper).await?;
+        models::LocalUser::sync(&instance, mapper).await?;
 
         Ok(DatabasePool(instance))
     }

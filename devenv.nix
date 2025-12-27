@@ -30,6 +30,11 @@
         devenv tasks run abyssal
     '';
 
+    scripts.reset.exec = ''
+        rm -rf .db
+        mkdir .db
+    '';
+
     tasks = {
         "abyssal:pnpm-install" = {
             exec = "pnpm install";
