@@ -1,10 +1,37 @@
+use std::ops::{Deref, DerefMut};
+
 use figment::Figment;
 use rbatis::{RBatis, table_sync::{self, ColumnMapper}};
 use rocket_db_pools::{Connection, Database};
 use crate::models;
 
 #[derive(Clone, Debug)]
-pub struct DatabasePool(RBatis);
+pub struct DatabasePool(pub(self) RBatis);
+
+impl Deref for DatabasePool {
+    type Target = RBatis;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DatabasePool {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<DatabasePool> for RBatis {
+    fn from(value: DatabasePool) -> Self {
+        value.0
+    }
+}
+
+impl DatabasePool {
+    pub fn db(&self) -> RBatis {
+        self.0.clone()
+    }
+}
 
 #[rocket::async_trait]
 impl rocket_db_pools::Pool for DatabasePool {

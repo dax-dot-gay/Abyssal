@@ -20,14 +20,23 @@ pub struct LocalUser {
 
     #[serde(default)]
     #[getset(set = "pub")]
-    groups: Vec<Uuid>
+    groups: Vec<Uuid>,
+
+    #[serde(default)]
+    default_admin: bool
 }
 
 impl LocalUser {
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> crate::Result<Self> {
         let username = username.into();
         let password = password.into();
-        Ok(Self { id: Uuid::new(), username, password: Self::make_password(password)?, groups: vec![] })
+        Ok(Self { id: Uuid::new(), username, password: Self::make_password(password)?, groups: vec![], default_admin: false })
+    }
+
+    pub fn new_default_admin(username: impl Into<String>, password: impl Into<String>) -> crate::Result<Self> {
+        let username = username.into();
+        let password = password.into();
+        Ok(Self { id: Uuid::new(), username, password: Self::make_password(password)?, groups: vec![], default_admin: true })
     }
 
     fn make_password(password: impl Into<String>) -> crate::Result<String> {
