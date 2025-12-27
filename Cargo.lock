@@ -2082,9 +2082,9 @@ dependencies = [
 
 [[package]]
 name = "rbatis-derive"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "114b6877d0b2b7ada37e5c148ea545bff2c8b3ea7252892d1ce455a712a59be4"
+checksum = "ce44508c78d08e6fa0fd5ba065366854f1f53efda6a1735907e7d17618df157f"
 dependencies = [
  "convert_case",
  "darling 0.23.0",

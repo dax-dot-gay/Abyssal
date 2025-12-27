@@ -37,7 +37,7 @@ impl LocalUser {
     }
 
     pub fn verify(&self, password: impl Into<String>) -> crate::Result<()> {
-        let parsed_hash = PasswordHash::new(&self.password.as_str())?;
+        let parsed_hash = PasswordHash::new(self.password.as_str())?;
         match Argon2::default().verify_password(password.into().as_bytes(), &parsed_hash) {
             Ok(_) => Ok(()),
             Err(PasswordHashError::Password) => Err(crate::Error::IncorrectCredentials),

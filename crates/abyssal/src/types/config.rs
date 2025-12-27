@@ -48,7 +48,7 @@ impl LimitsConfig {
         let extension = extension.as_ref().to_string();
         let ext = extension.trim_start_matches(".").to_string();
         if let Some(specific) = self.file_types.get(&ext) {
-            specific.clone()
+            *specific
         } else {
             self.files()
         }
@@ -173,7 +173,7 @@ impl Default for DatabaseConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters)]
+#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters, Default)]
 #[serde(rename_all = "snake_case")]
 #[getset(get_clone = "pub")]
 pub struct Config {
@@ -185,16 +185,6 @@ pub struct Config {
 
     #[serde(default, alias = "db")]
     database: DatabaseConfig,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            authentication: AuthConfig::default(),
-            database: DatabaseConfig::default(),
-        }
-    }
 }
 
 impl Config {

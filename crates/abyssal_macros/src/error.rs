@@ -29,8 +29,7 @@ struct Error {
 }
 
 fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Result<(Variant, Arm, Option<ItemImpl>)> {
-    let args = Error::from_attributes(&item.attrs)
-        .or_else(|e| Err(syn::Error::new(Span::call_site(), e.to_string())))?;
+    let args = Error::from_attributes(&item.attrs).map_err(|e| syn::Error::new(Span::call_site(), e.to_string()))?;
 
     let fields = item.fields.clone();
     let Error {
@@ -75,19 +74,17 @@ fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Res
                 #item_ident (std::sync::Arc<#definite_type>)
             })?
         }
+    } else if let Some(desc) = args_description.clone() {
+        syn::parse2(quote! {
+            #[doc = #desc]
+            #[error(#args_format)]
+            #item_ident #item_fields
+        })?
     } else {
-        if let Some(desc) = args_description.clone() {
-            syn::parse2(quote! {
-                #[doc = #desc]
-                #[error(#args_format)]
-                #item_ident #item_fields
-            })?
-        } else {
-            syn::parse2(quote! {
-                #[error(#args_format)]
-                #item_ident #item_fields
-            })?
-        }
+        syn::parse2(quote! {
+            #[error(#args_format)]
+            #item_ident #item_fields
+        })?
     };
 
     let pattern: TokenStream = match fields {
