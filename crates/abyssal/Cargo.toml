@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 abyssal_macros = { workspace = true }
 anyhow = { workspace = true }
+argon2 = { workspace = true, features = ["std", "simple"] }
 bon = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["cargo", "derive", "env", "string"] }
@@ -17,6 +18,7 @@ rbatis = { workspace = true, features = ["rbatis-macro-driver"] }
 rbdc-mysql = { workspace = true, features = ["rbdc"] }
 rbdc-pg = { workspace = true, features = ["rbdc"] }
 rbdc-sqlite = { workspace = true, features = ["rbdc", "sqlite-bundled"] }
+rbs = "4.6.2"
 rocket = { workspace = true, features = ["json", "secrets", "tls", "uuid"] }
 rocket_db_pools = { workspace = true }
 rocket_okapi = { workspace = true, features = [

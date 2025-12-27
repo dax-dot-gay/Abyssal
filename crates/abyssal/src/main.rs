@@ -1,6 +1,7 @@
 pub mod types;
 pub mod util;
 pub mod routes;
+pub mod models;
 mod error;
 mod cli;
 
