@@ -1,11 +1,12 @@
 use rbatis::rbdc::Uuid;
+use rbatis_derive::Schema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Schema)]
+#[schema(table(name = "auth_user"))]
 pub struct AuthUser {
     pub id: Uuid,
-    pub name: String,
-    pub description: Option<String>,
-}
 
-rbatis::crud!(AuthUser {});
+    #[field(unique)]
+    pub username: String
+}

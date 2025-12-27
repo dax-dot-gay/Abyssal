@@ -1,17 +1,5 @@
 {
-    "sqltools.connections": [
-        {
-            "ssh": "Disabled",
-            "previewLimit": 50,
-            "server": "localhost",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "name": "abyssal",
-            "database": "abyssal",
-            "username": "abyssal",
-            "password": "abyssal"
-        }
-    ],
+    "sqltools.connections": [],
     "cssVariables.lookupFiles": [
         "client/abyssal/**/*.css",
         "client/abyssal/**/*.scss",

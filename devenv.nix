@@ -1,8 +1,5 @@
 {
     pkgs,
-    lib,
-    config,
-    inputs,
     ...
 }:
 
@@ -23,19 +20,6 @@
                 install.enable = false;
             };
         };
-    };
-
-    services.postgres = {
-        enable = true;
-        listen_addresses = "127.0.0.1";
-        initialDatabases = [
-            {
-                name = "abyssal";
-                user = "abyssal";
-                pass = "abyssal";
-            }
-        ];
-        port = 5432;
     };
 
     scripts.dev.exec = ''
@@ -59,9 +43,5 @@
             exec = "bash certs.sh";
             cwd = ".";
         };
-    };
-
-    env = {
-        DATABASE_URL = "postgresql://abyssal:abyssal@localhost:5432/abyssal";
     };
 }

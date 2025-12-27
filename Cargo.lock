@@ -17,6 +17,7 @@ dependencies = [
  "okapi",
  "parking_lot",
  "rbatis",
+ "rbatis-derive",
  "rbdc-mysql",
  "rbdc-pg",
  "rbdc-sqlite",
@@ -2077,6 +2078,21 @@ dependencies = [
  "serde",
  "syn 2.0.111",
  "url",
+]
+
+[[package]]
+name = "rbatis-derive"
+version = "0.1.0"
+source = "git+https://github.com/dax-dot-gay/rbatis-derive.git#9e7206eebce369f6fd72dbb25b05bc6c0ced2b0c"
+dependencies = [
+ "convert_case",
+ "darling 0.23.0",
+ "manyhow",
+ "proc-macro2",
+ "quote",
+ "rbatis",
+ "rbs",
+ "syn 2.0.111",
 ]
 
 [[package]]

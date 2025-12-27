@@ -4,6 +4,7 @@ members = ["crates/abyssal", "crates/abyssal_macros"]
 
 [workspace.dependencies]
 abyssal_macros = { path = "./crates/abyssal_macros", version = "*" }
+rbatis-derive = {git = "https://github.com/dax-dot-gay/rbatis-derive.git", version = "*"}
 anyhow = "1.0.100"
 bon = "3.8.1"
 chrono = "0.4.42"

@@ -1,6 +1,7 @@
 use figment::Figment;
 use rbatis::{RBatis, table_sync::{self, ColumnMapper}};
 use rocket_db_pools::{Connection, Database};
+use crate::models;
 
 #[derive(Clone, Debug)]
 pub struct DatabasePool(RBatis);
@@ -13,13 +14,13 @@ impl rocket_db_pools::Pool for DatabasePool {
     async fn init(figment: &Figment) -> crate::Result<Self> {
         let config: crate::types::config::DatabaseConfig = figment.extract()?;
         let instance = RBatis::new();
-        let _mapper = match config.backend() {
+        let mapper = match config.backend() {
             crate::types::config::DatabaseBackend::Sqlite => {instance.init(rbdc_sqlite::SqliteDriver {}, &config.url())?; &table_sync::SqliteTableMapper{} as &dyn ColumnMapper},
             crate::types::config::DatabaseBackend::Postgres => {instance.init(rbdc_pg::PostgresDriver {}, &config.url())?; &table_sync::PGTableMapper{} as &dyn ColumnMapper},
             crate::types::config::DatabaseBackend::Mysql => {instance.init(rbdc_mysql::MysqlDriver {}, &config.url())?; &table_sync::MssqlTableMapper{} as &dyn ColumnMapper},
         };
 
-        // TODO: Automatic table mapping
+        models::AuthUser::sync(&instance, mapper).await?;
 
         Ok(DatabasePool(instance))
     }

@@ -34,3 +34,4 @@ devenv.local.yaml
 # Certificates
 client/abyssal/certs
 crates/abyssal/certs
+.db

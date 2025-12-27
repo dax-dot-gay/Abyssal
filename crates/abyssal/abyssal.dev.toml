@@ -13,4 +13,4 @@ admin_password = "admin"
 
 [database]
 backend = "sqlite"
-url = "sqlite://abyssal.dev.db"
+url = "sqlite://../../.db/abyssal.dev.db"
