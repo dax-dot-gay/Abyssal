@@ -9,6 +9,7 @@ dependencies = [
  "abyssal_macros",
  "anyhow",
  "argon2",
+ "base64 0.22.1",
  "bon",
  "bson 3.1.0",
  "chrono",

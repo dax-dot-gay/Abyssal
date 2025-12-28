@@ -62,6 +62,10 @@ impl<'r, T: Model> FromRequest<'r>
 }
 
 impl<T: Model> Collection<T> {
+    pub fn new(client: mongodb::Client, database: impl Into<String>) -> Self {
+        Self(client.database(database.into().as_str()).collection::<T>(T::collection()))
+    }
+
     pub async fn get(&self, id: impl Into<Uuid>) -> crate::Result<Option<T>> {
         Ok(self.find_one(doc! {T::model_id_field(): id.into()}).await?)
     }

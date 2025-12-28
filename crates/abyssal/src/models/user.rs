@@ -1,14 +1,19 @@
+use std::str::FromStr;
+
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
-    password_hash::{Error as PasswordHashError, SaltString, rand_core::OsRng},
+    password_hash::{Error as PasswordHashError, SaltString, rand_core::{OsRng, RngCore}},
 };
+use base64::Engine as _;
+use bson::doc;
 use getset::{CloneGetters, WithSetters};
+use rocket::{Request, http::Status, request::{self, FromRequest}};
 use rocket_okapi::JsonSchema;
 use serde::{Deserialize, Serialize};
 use spire_enum::prelude::{delegate_impl, delegated_enum};
 use strum::Display;
 
-use crate::{models::Model, types::Uuid};
+use crate::{models::Model, types::Uuid, util::Collection};
 
 #[derive(
     Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq, Eq, PartialOrd, Ord, Hash, Display,
@@ -94,6 +99,12 @@ pub struct ApplicationUser {
     owner: Uuid,
     client_id: String,
     client_secret: String,
+}
+
+impl ApplicationUser {
+    pub(self) fn new(name: String, owner: Uuid, client_id: String, client_secret: String) -> Self {
+        Self { id: Uuid::new(), name, groups: vec![], owner, client_id, client_secret }
+    }
 }
 
 pub trait UserMethods {
@@ -206,6 +217,19 @@ impl User {
         Ok(OwnerUser::new(username, hashed_password).into())
     }
 
+    pub fn create_application(name: impl Into<String>, owner: impl Into<Uuid>) -> crate::Result<(Self, String)> {
+        let mut client_id_bytes = [0u8; 32];
+        let mut client_secret_bytes = [0u8; 64];
+
+        OsRng.fill_bytes(&mut client_id_bytes);
+        OsRng.fill_bytes(&mut client_secret_bytes);
+
+        let client_id = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(client_id_bytes);
+        let client_secret = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(client_secret_bytes);
+        let hashed_secret = Self::hash_value(client_secret.clone())?;
+        Ok((ApplicationUser::new(name.into(), owner.into(), client_id, hashed_secret).into(), client_secret))
+    }
+
     pub fn verify_password(&self, password: impl Into<String>) -> crate::Result<bool> {
         let password = password.into();
         let hashed = match self.clone() {
@@ -220,6 +244,18 @@ impl User {
         Self::verify_value(password, hashed)
     }
 
+    pub fn verify_client_secret(&self, secret: impl Into<String>) -> crate::Result<bool> {
+        let secret = secret.into();
+        let hashed = match self.clone() {
+            User::Application(user) => Ok(user.client_secret()),
+            _ => Err(crate::Error::invalid_user_type([
+                UserKind::Application
+            ])),
+        }?;
+
+        Self::verify_value(secret, hashed)
+    }
+
     pub fn with_password(self, new_password: impl Into<String>) -> crate::Result<Self> {
         let hashed_password = Self::hash_value(new_password)?;
         match self {
@@ -229,6 +265,59 @@ impl User {
                 UserKind::Local,
                 UserKind::Owner,
             ])),
+        }
+    }
+
+    async fn from_request_inner(req: &Request<'_>) -> crate::Result<Self> {
+        if let Some(authorization) = req.headers().get_one("Authorization").map(|v| v.to_string()) {
+            match authorization.split_once(" ") {
+                Some(("Token", token)) => {
+                    let tokens = Collection::<crate::models::Token>::from_request(req).await.unwrap();
+                    let users = Collection::<crate::models::User>::from_request(req).await.unwrap();
+                    if let Ok(Some(existing_token)) = tokens.get(Uuid::from_str(token)?).await {
+                        if let Ok(Some(existing_user)) = existing_token.resolve_user(users).await {
+                            let refreshed = existing_token.refresh_token();
+                            let _ = tokens.save(refreshed).await?;
+                            Ok(existing_user)
+                        } else {
+                            let _ = tokens.delete(existing_token.id()).await?;
+                            Err(crate::Error::MissingAuthorization)
+                        }
+                    } else {
+                        Err(crate::Error::MissingAuthorization)
+                    }
+                },
+                Some(("Application", app_auth)) => {
+                    let users = Collection::<crate::models::User>::from_request(req).await.unwrap();
+                    if let Some((client_id, client_secret)) = app_auth.split_once(":") {
+                        if let Ok(Some(existing_user)) = users.find_one(doc! {"client_id": client_id}).await {
+                            if existing_user.verify_client_secret(client_secret.to_string())? {
+                                Ok(existing_user)
+                            } else {
+                                Err(crate::Error::MissingAuthorization)
+                            }
+                        } else {
+                            Err(crate::Error::MissingAuthorization)
+                        }
+                    } else {
+                        Err(crate::Error::MissingAuthorization)
+                    }
+                },
+                _ => Err(crate::Error::MissingAuthorization)
+            }
+        } else {
+            Err(crate::Error::MissingAuthorization)
+        }
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for User {
+    type Error = crate::Error;
+    async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
+        match Self::from_request_inner(req).await {
+            Ok(resolved) => request::Outcome::Success(resolved),
+            Err(err) => request::Outcome::Error((Status::new(err.metadata().status), err)),
         }
     }
 }

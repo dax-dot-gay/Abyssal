@@ -12,8 +12,6 @@ use rocket::{Build, Rocket, fairing::AdHoc, launch};
 use rocket_okapi::settings::OpenApiSettings;
 use spire_enum::prelude::EnumExtensions;
 
-use crate::models::{Model, UserMethods};
-
 async fn launch_inner() -> Rocket<Build> {
     let args = cli::AbyssalCli::parse();
     let config = types::Config::load(args.config_files).expect("Failed to load configuration!");
@@ -31,11 +29,10 @@ async fn launch_inner() -> Rocket<Build> {
         .attach(AdHoc::on_liftoff("Ensure admin user", |rck| {
             Box::pin(async move {
                 let config = rck.state::<types::Config>().unwrap();
-                let collection = rck
-                    .state::<mongodb::Client>()
-                    .unwrap()
-                    .database(&config.database().database())
-                    .collection::<models::User>(models::User::collection());
+                let collection = util::Collection::<models::User>::new(
+                    rck.state::<mongodb::Client>().unwrap().clone(),
+                    config.database().database(),
+                );
                 if let Some(existing) = collection
                     .find_one(doc! {"username": config.authentication().admin_user()})
                     .await
@@ -52,11 +49,7 @@ async fn launch_inner() -> Rocket<Build> {
                         config.authentication().admin_password(),
                     )
                     .unwrap();
-                    collection
-                        .replace_one(doc! {"id": created.id()}, created)
-                        .upsert(true)
-                        .await
-                        .unwrap();
+                    collection.save(created).await.unwrap();
                 }
             })
         }))

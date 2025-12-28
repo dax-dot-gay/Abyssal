@@ -16,14 +16,20 @@ pub enum Error {
     #[error(format = "Password generation error: {0:?}", arc, from, code = "server.password_generation")]
     PasswordGeneration(password_hash::Error),
 
-    #[error(format = "Invalid credentials (incorrect username/password)", status = 403, code = "auth.credentials")]
+    #[error(format = "Invalid credentials (incorrect username/password)", status = 401, code = "auth.credentials")]
     IncorrectCredentials,
 
     #[error(format = "Missing application state (critical): <{0}>", code = "server.missing_state")]
     MissingState(String),
 
     #[error(format = "Invalid user type: should be one of [{0}]", code = "auth.invalid_user_type")]
-    InvalidUserType(String)
+    InvalidUserType(String),
+
+    #[error(format = "Missing/invalid authorization header or cookie", code = "auth.missing", status = 401)]
+    MissingAuthorization,
+
+    #[error(format = "UUID encoding/decoding error: {0:?}", arc, from)]
+    Uuid(uuid::Error)
 }
 
 impl Error {

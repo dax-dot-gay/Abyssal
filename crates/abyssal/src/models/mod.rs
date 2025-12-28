@@ -1,9 +1,6 @@
-pub mod user;
+use crate::types::Uuid;
 use serde::{Serialize, de::DeserializeOwned};
 use std::fmt::Debug;
-pub use user::{User, UserKind, UserMethods};
-
-use crate::types::Uuid;
 
 pub trait Model: Serialize + DeserializeOwned + Clone + Debug + Send + Sync {
     fn collection() -> &'static str;
@@ -12,3 +9,9 @@ pub trait Model: Serialize + DeserializeOwned + Clone + Debug + Send + Sync {
         "id".to_string()
     }
 }
+
+pub mod user;
+pub use user::{User, UserKind, UserMethods};
+
+pub mod token;
+pub use token::Token;
