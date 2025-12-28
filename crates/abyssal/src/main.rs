@@ -10,8 +10,9 @@ use clap::Parser;
 pub use error::{Error, ErrorMeta, Result};
 use rocket::{Build, Rocket, fairing::AdHoc, launch};
 use rocket_okapi::settings::OpenApiSettings;
+use spire_enum::prelude::EnumExtensions;
 
-use crate::models::Model;
+use crate::models::{Model, UserMethods};
 
 async fn launch_inner() -> Rocket<Build> {
     let args = cli::AbyssalCli::parse();
@@ -20,22 +21,45 @@ async fn launch_inner() -> Rocket<Build> {
     let (routes, _) = routes::routes(&OpenApiSettings::default());
 
     rocket::custom(rocket_config)
-        .manage(mongodb::Client::with_uri_str(config.database().url()).await.unwrap())
+        .manage(
+            mongodb::Client::with_uri_str(config.database().url())
+                .await
+                .unwrap(),
+        )
         .manage(config.clone())
         .mount("/api", routes)
-        .attach(AdHoc::on_liftoff("Ensure admin user", |rck| Box::pin(async move {
-        
-            let config = rck.state::<types::Config>().unwrap();
-            let collection = rck.state::<mongodb::Client>().unwrap().database(&config.database().database()).collection::<models::LocalUser>(models::LocalUser::collection());
-            if let Some(existing) = collection.find_one(doc! {"username": config.authentication().admin_user()}).await.unwrap() {
-                if !existing.default_admin() {
-                    panic!("Another user with the default administrator's username already exists!");
+        .attach(AdHoc::on_liftoff("Ensure admin user", |rck| {
+            Box::pin(async move {
+                let config = rck.state::<types::Config>().unwrap();
+                let collection = rck
+                    .state::<mongodb::Client>()
+                    .unwrap()
+                    .database(&config.database().database())
+                    .collection::<models::User>(models::User::collection());
+                if let Some(existing) = collection
+                    .find_one(doc! {"username": config.authentication().admin_user()})
+                    .await
+                    .unwrap()
+                {
+                    if !existing.is_var::<models::user::OwnerUser>() {
+                        panic!(
+                            "Another user with the default administrator's username already exists!"
+                        );
+                    }
+                } else {
+                    let created = models::User::create_owner(
+                        config.authentication().admin_user(),
+                        config.authentication().admin_password(),
+                    )
+                    .unwrap();
+                    collection
+                        .replace_one(doc! {"id": created.id()}, created)
+                        .upsert(true)
+                        .await
+                        .unwrap();
                 }
-            } else {
-                let created = models::LocalUser::new_default_admin(config.authentication().admin_user(), config.authentication().admin_password()).unwrap();
-                collection.replace_one(doc! {"id": created.id()}, created).upsert(true).await.unwrap();
-            }
-        })))
+            })
+        }))
 }
 
 #[launch]

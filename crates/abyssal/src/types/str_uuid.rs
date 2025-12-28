@@ -4,7 +4,7 @@ use bson::Bson;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid as RawUuid;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, rocket_okapi::JsonSchema)]
 pub struct Uuid(String);
 
 impl Uuid {
