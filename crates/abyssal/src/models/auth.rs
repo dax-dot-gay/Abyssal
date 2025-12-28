@@ -1,6 +1,6 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier, password_hash::{PasswordHasher, SaltString, rand_core::OsRng, Error as PasswordHashError}};
 use getset::{CloneGetters, Setters};
-use rbatis::rbdc::Uuid;
+use rbatis::rbdc::{DateTime, Uuid};
 use rbatis_derive::Schema;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, BoolFromInt};
@@ -63,4 +63,21 @@ impl LocalUser {
         self.password = Self::make_password(new_password)?;
         Ok(())
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters, Setters, Schema)]
+#[schema(table(name = "sessions"))]
+#[getset(get_clone = "pub")]
+pub struct Session {
+    #[field(select)]
+    id: Uuid,
+
+    #[field(select)]
+    #[getset(set = "pub")]
+    user: Option<Uuid>,
+
+    created: DateTime,
+    
+    #[getset(set = "pub")]
+    accessed: DateTime
 }

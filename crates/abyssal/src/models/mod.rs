@@ -1,3 +1,3 @@
 pub mod auth;
 
-pub use auth::LocalUser;
+pub use auth::{LocalUser, Session};

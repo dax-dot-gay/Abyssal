@@ -48,6 +48,7 @@ impl rocket_db_pools::Pool for DatabasePool {
         };
 
         models::LocalUser::sync(&instance, mapper).await?;
+        models::Session::sync(&instance, mapper).await?;
 
         Ok(DatabasePool(instance))
     }
