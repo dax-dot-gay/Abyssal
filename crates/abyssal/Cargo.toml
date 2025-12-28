@@ -14,13 +14,7 @@ figment = { workspace = true, features = ["env", "toml"] }
 getset = { workspace = true }
 okapi = { workspace = true, features = ["impl_json_schema", "preserve_order"] }
 parking_lot = { workspace = true, features = ["arc_lock", "send_guard", "serde"] }
-rbatis = { workspace = true, features = ["rbatis-macro-driver"] }
-rbdc-mysql = { workspace = true, features = ["rbdc"] }
-rbdc-pg = { workspace = true, features = ["rbdc"] }
-rbdc-sqlite = { workspace = true, features = ["rbdc", "sqlite-bundled"] }
-rbs = "4.6.2"
 rocket = { workspace = true, features = ["json", "secrets", "tls", "uuid"] }
-rocket_db_pools = { workspace = true }
 rocket_okapi = { workspace = true, features = [
   "preserve_order",
   "rocket_db_pools",
@@ -40,5 +34,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["fast-rng", "serde", "v4"] }
-rbatis-derive = {workspace = true}
 serde_with = "3.16.1"
+mongodb = { version = "3.4.1", features = ["bson-3"] }
+bson = { version = "3.1.0", features = ["chrono-0_4", "serde", "serde_json-1", "serde_with-3", "uuid-1"] }
+strum = { version = "0.27.2", features = ["derive"] }

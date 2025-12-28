@@ -1,19 +1,15 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier, password_hash::{PasswordHasher, SaltString, rand_core::OsRng, Error as PasswordHashError}};
+use chrono::{DateTime, Utc};
 use getset::{CloneGetters, Setters};
-use rbatis::rbdc::{DateTime, Uuid};
-use rbatis_derive::Schema;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, BoolFromInt};
+use crate::{models::Model, types::Uuid};
 
-#[serde_as]
-#[derive(Clone, Debug, Serialize, Deserialize, Schema, CloneGetters, Setters)]
-#[schema(table(name = "local_users"))]
+#[derive(Clone, Debug, Serialize, Deserialize, CloneGetters, Setters)]
 #[getset(get_clone = "pub")]
 pub struct LocalUser {
-    #[field(select)]
+    #[serde(default)]
     id: Uuid,
 
-    #[field(unique, select)]
     #[getset(set = "pub")]
     username: String,
 
@@ -25,9 +21,13 @@ pub struct LocalUser {
     groups: Vec<Uuid>,
 
     #[serde(default)]
-    #[serde_as(as = "BoolFromInt")]
-    #[field(sql_type = "INTEGER")]
     default_admin: bool
+}
+
+impl Model for LocalUser {
+    fn collection() -> &'static str {
+        "auth.users.local"
+    }
 }
 
 impl LocalUser {
@@ -65,19 +65,24 @@ impl LocalUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters, Setters, Schema)]
-#[schema(table(name = "sessions"))]
+#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters, Setters)]
 #[getset(get_clone = "pub")]
 pub struct Session {
-    #[field(select)]
+    #[serde(default)]
     id: Uuid,
 
-    #[field(select)]
     #[getset(set = "pub")]
+    #[serde(default)]
     user: Option<Uuid>,
 
-    created: DateTime,
+    created: DateTime<Utc>,
     
     #[getset(set = "pub")]
-    accessed: DateTime
+    accessed: DateTime<Utc>
+}
+
+impl Model for Session {
+    fn collection() -> &'static str {
+        "auth.session"
+    }
 }

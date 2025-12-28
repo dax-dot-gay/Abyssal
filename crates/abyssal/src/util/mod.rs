@@ -1,2 +1,2 @@
-pub mod database;
-pub use database::{ORM, AbyssalDb, DatabasePool};
+pub mod collection;
+pub use collection::Collection;

@@ -22,6 +22,12 @@
         };
     };
 
+    services.mongodb = {
+        enable = true;
+        initDatabasePassword = "abyssal";
+        initDatabaseUsername = "abyssal";
+    };
+
     scripts.dev.exec = ''
         zellij -l run.kdl
     '';

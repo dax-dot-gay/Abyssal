@@ -4,7 +4,6 @@ members = ["crates/abyssal", "crates/abyssal_macros"]
 
 [workspace.dependencies]
 abyssal_macros = { path = "./crates/abyssal_macros", version = "*" }
-rbatis-derive = { version = "1.1.1" }
 anyhow = "1.0.100"
 bon = "3.8.1"
 chrono = "0.4.42"
@@ -12,7 +11,6 @@ figment = "0.10.19"
 okapi = "0.7.0"
 parking_lot = "0.12.5"
 rocket = "0.5.1"
-rocket_db_pools = "0.2.0"
 rocket_okapi = "0.9.0"
 rocket_ws = "0.1.1"
 schemars = "0.8"
@@ -29,8 +27,4 @@ manyhow = "0.11.4"
 proc-macro2 = "1.0.103"
 quote = "1.0.42"
 syn = "2.0.111"
-rbatis = "4.6.14"
-rbdc-mysql = "4.6.2"
-rbdc-pg = "4.6.3"
-rbdc-sqlite = "4.6.5"
 argon2 = "0.5.3"

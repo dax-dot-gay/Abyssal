@@ -148,27 +148,27 @@ impl Default for AuthConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "snake_case")]
-pub enum DatabaseBackend {
-    Sqlite,
-    Postgres,
-    Mysql,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, CloneGetters)]
 #[serde(rename_all = "snake_case")]
 #[getset(get_clone = "pub")]
 pub struct DatabaseConfig {
-    backend: DatabaseBackend,
     url: String,
+
+    #[serde(default = "DatabaseConfig::_d_database", alias = "db")]
+    database: String
+}
+
+impl DatabaseConfig {
+    fn _d_database() -> String {
+        String::from("abyssal")
+    }
 }
 
 impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
-            backend: DatabaseBackend::Sqlite,
-            url: String::from("sqlite://abyssal.db"),
+            url: String::from("mongodb://localhost:27017"),
+            database: Self::_d_database()
         }
     }
 }
@@ -210,9 +210,9 @@ impl Config {
             .join((
                 "databases",
                 json!({
-                    "rbatis": {
+                    "mongodb": {
                         "url": self.database().url(),
-                        "backend": self.database().backend()
+                        "database": self.database().database()
                     }
                 }),
             ))

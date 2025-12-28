@@ -12,5 +12,5 @@ admin_user = "admin"
 admin_password = "admin"
 
 [database]
-backend = "sqlite"
-url = "sqlite://../../.db/abyssal.dev.db"
+url = "mongodb://abyssal:abyssal@localhost:27017"
+database = "abyssal"
