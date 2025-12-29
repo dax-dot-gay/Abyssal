@@ -1,10 +1,16 @@
 {
-    "sqltools.connections": [],
     "cssVariables.lookupFiles": [
         "client/abyssal/**/*.css",
         "client/abyssal/**/*.scss",
         "client/abyssal/**/*.sass",
         "client/abyssal/**/*.less",
         "client/abyssal/node_modules/@mantine/core/styles.css"
-    ]
+    ],
+    "i18n-ally.enabledFrameworks": [
+        "react-i18next"
+    ],
+    "i18n-ally.localesPaths": [
+        "client/abyssal/src/localization/lang"
+    ],
+    "i18n-ally.extract.autoDetect": true
 }
