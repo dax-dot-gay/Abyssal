@@ -74,7 +74,7 @@ export function LoginView() {
                         <Group gap="sm" w="100%" justify="space-between">
                             <Logo width={36} height={36} />
                             <Title order={3} ff="monospace">
-                                {t("app.name")}/*
+                                Abyssal/*
                             </Title>
                         </Group>
                         <Divider />

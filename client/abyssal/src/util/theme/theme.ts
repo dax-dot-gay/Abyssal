@@ -374,11 +374,11 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
     fontFamily: "Geist",
     fontFamilyMonospace: "Geist Mono",
     radius: {
-        xs: rem("6px"),
-        sm: rem("8px"),
-        md: rem("12px"),
-        lg: rem("16px"),
-        xl: rem("24px"),
+        xs: rem("4px"),
+        sm: rem("6px"),
+        md: rem("10px"),
+        lg: rem("14px"),
+        xl: rem("22px"),
     },
     defaultRadius: "sm",
     spacing: {

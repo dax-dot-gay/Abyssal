@@ -48,9 +48,20 @@ async fn login(
 }
 
 #[openapi(tag = "Users")]
+#[post("/logout")]
+async fn logout(user: User, tokens: Collection<Token>) -> crate::Result<()> {
+    if let Some(existing) = tokens.find_one(doc! {"user": user.id()}).await? {
+        let _ = tokens.delete(existing.id()).await?;
+        Ok(())
+    } else {
+        Ok(())
+    }
+}
+
+#[openapi(tag = "Users")]
 #[get("/self")]
 async fn get_user_self(user: User) -> crate::ApiResult<GenericUser> {
     Ok(Json(user.into()))
 }
 
-export_routes![login, get_user_self];
+export_routes![login, logout, get_user_self];

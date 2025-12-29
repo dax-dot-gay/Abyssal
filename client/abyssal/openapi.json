@@ -84,6 +84,56 @@
         }
       }
     },
+    "/users/logout": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "500": {
+            "description": "[500 Internal Server Error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500)",
+            "content": {
+              "ErrorMeta": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMeta"
+                },
+                "example": {
+                  "status": 500,
+                  "code": "error.example",
+                  "message": "An example error occurred: <reason>",
+                  "explanation": "The example error is raised when..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "[401 Unauthorized](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401)",
+            "content": {
+              "ErrorMeta": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMeta"
+                },
+                "example": {
+                  "status": 401,
+                  "code": "error.example",
+                  "message": "An example error occurred: <reason>",
+                  "explanation": "The example error is raised when..."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HttpAuth": []
+          }
+        ]
+      }
+    },
     "/users/self": {
       "get": {
         "tags": [

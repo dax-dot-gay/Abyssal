@@ -1,7 +1,4 @@
 {
-  "app": {
-    "name": "Abyssal"
-  },
   "login": {
     "username": "Username",
     "password": "Password",
@@ -17,5 +14,9 @@
   "notification": {
     "success": "Success!",
     "error": "Error:"
+},
+"layout": {
+    "search": "Search",
+    "path": "Filesystem Path"
   }
 }

@@ -75,6 +75,30 @@ export type LoginResponses = {
 
 export type LoginResponse2 = LoginResponses[keyof LoginResponses];
 
+export type LogoutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/logout';
+};
+
+export type LogoutErrors = {
+    /**
+     * [401 Unauthorized](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401)
+     */
+    401: ErrorMeta;
+    /**
+     * [500 Internal Server Error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500)
+     */
+    500: ErrorMeta;
+};
+
+export type LogoutError = LogoutErrors[keyof LogoutErrors];
+
+export type LogoutResponses = {
+    200: unknown;
+};
+
 export type GetUserSelfData = {
     body?: never;
     path?: never;

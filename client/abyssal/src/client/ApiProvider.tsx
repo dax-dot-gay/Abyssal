@@ -23,11 +23,15 @@ export function ApiProvider({
 }) {
     const [storedToken, setStoredToken] = useLocalStorage<string | null>({
         key: "abyssal.token",
-        defaultValue: null,
+        defaultValue: JSON.parse(
+            window.localStorage.getItem("abyssal.token") ?? "null",
+        ),
     });
     const [storedUser, setStoredUser] = useLocalStorage<GenericUser | null>({
         key: "abyssal.user",
-        defaultValue: null,
+        defaultValue: JSON.parse(
+            window.localStorage.getItem("abyssal.user") ?? "null",
+        ),
     });
     const depStoredUser = useMemo(
         () => JSON.stringify(storedUser),

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetInfoData, GetInfoResponses, GetUserSelfData, GetUserSelfErrors, GetUserSelfResponses, LoginData, LoginErrors, LoginResponses } from './types.gen';
+import type { GetInfoData, GetInfoResponses, GetUserSelfData, GetUserSelfErrors, GetUserSelfResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -33,6 +33,8 @@ export const login = <ThrowOnError extends boolean = false>(options: Options<Log
         ...options.headers
     }
 });
+
+export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>) => (options?.client ?? client).post<LogoutResponses, LogoutErrors, ThrowOnError>({ url: '/users/logout', ...options });
 
 export const getUserSelf = <ThrowOnError extends boolean = false>(options?: Options<GetUserSelfData, ThrowOnError>) => (options?.client ?? client).get<GetUserSelfResponses, GetUserSelfErrors, ThrowOnError>({
     responseType: 'json',
