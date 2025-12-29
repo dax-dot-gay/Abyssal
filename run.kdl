@@ -7,7 +7,7 @@ layout {
         }
         pane {
             command "cargo"
-            args "run" "--" "--config" "abyssal.dev.toml"
+            args "run" "--" "--config" "abyssal.dev.toml" "--specification-path" "../../client/abyssal/openapi.json"
             cwd "crates/abyssal"
         }
     }

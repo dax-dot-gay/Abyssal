@@ -16,9 +16,18 @@ use spire_enum::prelude::EnumExtensions;
 
 async fn launch_inner() -> Rocket<Build> {
     let args = cli::AbyssalCli::parse();
-    let config = types::Config::load(args.config_files).expect("Failed to load configuration!");
+    let config = types::Config::load(args.config_files.clone()).expect("Failed to load configuration!");
     let rocket_config = config.rocket_config();
     let (routes, openapi_spec) = routes::routes(&OpenApiSettings::default());
+
+    if let Some(spec_path) = args.specification_path.clone() {
+        let serialized = serde_json::to_string_pretty(&openapi_spec).unwrap();
+        if let Some(parent) = spec_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+
+        std::fs::write(spec_path, serialized).unwrap();
+    }
 
     rocket::custom(rocket_config)
         .manage(

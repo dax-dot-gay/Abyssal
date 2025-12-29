@@ -1,0 +1,261 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "abyssal",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/info": {
+      "get": {
+        "operationId": "get_info",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetInfoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "[500 Internal Server Error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500)",
+            "content": {
+              "ErrorMeta": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMeta"
+                },
+                "example": {
+                  "status": 500,
+                  "code": "error.example",
+                  "message": "An example error occurred: <reason>",
+                  "explanation": "The example error is raised when..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "[401 Unauthorized](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401)",
+            "content": {
+              "ErrorMeta": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMeta"
+                },
+                "example": {
+                  "status": 401,
+                  "code": "error.example",
+                  "message": "An example error occurred: <reason>",
+                  "explanation": "The example error is raised when..."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/self": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "get_user_self",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericUser"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "[500 Internal Server Error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500)",
+            "content": {
+              "ErrorMeta": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMeta"
+                },
+                "example": {
+                  "status": 500,
+                  "code": "error.example",
+                  "message": "An example error occurred: <reason>",
+                  "explanation": "The example error is raised when..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "[401 Unauthorized](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401)",
+            "content": {
+              "ErrorMeta": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMeta"
+                },
+                "example": {
+                  "status": 401,
+                  "code": "error.example",
+                  "message": "An example error occurred: <reason>",
+                  "explanation": "The example error is raised when..."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HttpAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetInfoResponse": {
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "required": [
+          "token",
+          "user"
+        ],
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "user": {
+            "$ref": "#/components/schemas/GenericUser"
+          }
+        }
+      },
+      "Uuid": {
+        "type": "string"
+      },
+      "GenericUser": {
+        "type": "object",
+        "required": [
+          "groups",
+          "id",
+          "kind",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/UserKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UserKind": {
+        "type": "string",
+        "enum": [
+          "local",
+          "owner",
+          "oidc",
+          "application"
+        ]
+      },
+      "ErrorMeta": {
+        "type": "object",
+        "required": [
+          "code",
+          "explanation",
+          "message",
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "uint16",
+            "minimum": 0.0
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "password",
+          "username"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "HttpAuth": {
+        "description": "Authorization header containing either `Token <session token>` or `Application <client_id>:<client_secret>",
+        "type": "http",
+        "scheme": "Token | Application",
+        "bearerFormat": "Token | Application"
+      }
+    }
+  }
+}

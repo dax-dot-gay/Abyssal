@@ -5,7 +5,7 @@ use crate::{
     util::Collection,
 };
 use bson::doc;
-use rocket::{post, serde::json::Json};
+use rocket::{get, post, serde::json::Json};
 use rocket_okapi::{JsonSchema, openapi};
 use serde::{Deserialize, Serialize};
 
@@ -47,4 +47,10 @@ async fn login(
     }
 }
 
-export_routes![login];
+#[openapi(tag = "Users")]
+#[get("/self")]
+async fn get_user_self(user: User) -> crate::ApiResult<GenericUser> {
+    Ok(Json(user.into()))
+}
+
+export_routes![login, get_user_self];

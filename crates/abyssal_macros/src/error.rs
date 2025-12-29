@@ -3,7 +3,7 @@ use darling::FromAttributes;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::{
-    Arm, Fields, Ident, ItemEnum, ItemImpl, Token, Variant, punctuated::Punctuated
+    Arm, Fields, Ident, ItemEnum, ItemImpl, Stmt, Token, Variant, punctuated::Punctuated
 };
 
 #[derive(Debug, Clone, FromAttributes)]
@@ -28,7 +28,7 @@ struct Error {
     pub arc: bool,
 }
 
-fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Result<(Variant, Arm, Option<ItemImpl>)> {
+fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Result<(Variant, Arm, Option<ItemImpl>, u16)> {
     let args = Error::from_attributes(&item.attrs).map_err(|e| syn::Error::new(Span::call_site(), e.to_string()))?;
 
     let fields = item.fields.clone();
@@ -99,7 +99,7 @@ fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Res
                 status: #args_status,
                 code: String::from(#meta_code),
                 message: format!("{self}"),
-                description: String::from(#desc)
+                explanation: String::from(#desc)
             }
         })?
     } else {
@@ -108,7 +108,7 @@ fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Res
                 status: #args_status,
                 code: String::from(#meta_code),
                 message: format!("{}", self.clone()),
-                description: String::new()
+                explanation: String::new()
             }
         })?
     };
@@ -139,7 +139,7 @@ fn process_item(parent: Ident, item: Variant, meta_ident: Ident) -> manyhow::Res
         None
     };
 
-    Ok((new_variant, meta_arm, impl_from))
+    Ok((new_variant, meta_arm, impl_from, args_status))
 }
 
 pub fn impl_error(_: TokenStream, item: TokenStream) -> manyhow::Result<TokenStream> {
@@ -152,14 +152,44 @@ pub fn impl_error(_: TokenStream, item: TokenStream) -> manyhow::Result<TokenStr
     let mut error_variants: Punctuated<Variant, Token![,]> = Punctuated::new();
     let mut meta_arms: Punctuated<Arm, Token![,]> = Punctuated::new();
     let mut impl_froms: Vec<ItemImpl> = vec![];
+    let mut status_codes: Vec<u16> = vec![];
     for variant in input.variants {
-        let (new_variant, meta_arm, impl_from) = process_item(enum_ident.clone(), variant, metadata_ident.clone())?;
+        let (new_variant, meta_arm, impl_from, status_code) = process_item(enum_ident.clone(), variant, metadata_ident.clone())?;
         error_variants.push(new_variant);
         meta_arms.push(meta_arm);
         if let Some(ifr) = impl_from {
             impl_froms.push(ifr);
         }
+        if !status_codes.contains(&status_code) {
+            status_codes.push(status_code);
+        }
     }
+
+    let status_code_outputs = status_codes.into_iter().map(|code| {
+        let code_str = code.to_string();
+        let meta_ident_str = metadata_ident.to_string();
+        syn::parse2::<Stmt>(quote! {
+            responses.insert(
+                #code_str.to_string(),
+                RefOr::Object(OpenApiResponse {
+                    description: format!("[{} {}](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/{})", #code_str, rocket::http::Status::from_code(#code).unwrap_or(rocket::http::Status::InternalServerError).reason_lossy(), #code_str),
+                    content: map!{
+                        #meta_ident_str.to_string() => MediaType {
+                            schema: Some(_gen.json_schema::<#metadata_ident>()),
+                            example: Some(json!({
+                                "status": #code,
+                                "code": "error.example",
+                                "message": "An example error occurred: <reason>",
+                                "explanation": "The example error is raised when..."
+                            })),
+                            ..Default::default()
+                        }
+                    },
+                    ..Default::default()
+                })
+            );
+        }).unwrap()
+    }).collect::<Vec<Stmt>>();
 
     Ok(quote! {
         mod #mod_ident {
@@ -170,13 +200,18 @@ pub fn impl_error(_: TokenStream, item: TokenStream) -> manyhow::Result<TokenStr
                 http::{ContentType, Status},
                 serde::json::Json
             };
+            use okapi::openapi3::{Responses, Response as OpenApiResponse, RefOr, MediaType};
+            use okapi::map;
+            use rocket_okapi::{r#gen::OpenApiGenerator, response::OpenApiResponderInner, JsonSchema};
+            use rocket_okapi::okapi::schemars::{self, Map};
+            use serde_json::{value::Value, json};
 
-            #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
+            #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Eq, PartialEq, JsonSchema)]
             pub struct #metadata_ident {
                 pub status: u16,
                 pub code: String,
                 pub message: String,
-                pub description: String
+                pub explanation: String
             }
 
             #[derive(Clone, Debug, thiserror::Error)]
@@ -200,13 +235,14 @@ pub fn impl_error(_: TokenStream, item: TokenStream) -> manyhow::Result<TokenStr
 
             #(#impl_froms)*
 
-            use okapi::openapi3::{Responses, Response as OkResponse};
-            use rocket_okapi::{r#gen::OpenApiGenerator, response::OpenApiResponderInner};
             impl OpenApiResponderInner for Error {
                 fn responses(_gen: &mut OpenApiGenerator) -> rocket_okapi::Result<Responses> {
-                    let mut responses = Responses::default();
-                    responses.responses.entry("default".to_owned()).or_insert_with(|| OkResponse::default().into());
-                    Ok(responses)
+                    let mut responses = Map::new();
+                    #(#status_code_outputs)*
+                    Ok(Responses {
+                        responses,
+                        ..Default::default()
+                    })
                 }
             }
         }
