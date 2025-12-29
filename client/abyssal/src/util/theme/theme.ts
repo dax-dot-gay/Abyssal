@@ -372,6 +372,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
     autoContrast: true,
     luminanceThreshold: 0.3,
     fontFamily: "Geist",
+    fontFamilyMonospace: "Geist Mono",
     radius: {
         xs: rem("6px"),
         sm: rem("8px"),
@@ -971,7 +972,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
         }),
         Paper: Paper.extend({
             defaultProps: {
-                shadow: "xl",
+                shadow: "md",
             },
         }),
     },

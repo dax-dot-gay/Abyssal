@@ -1,1 +1,21 @@
-{}
+{
+  "app": {
+    "name": "Abyssal"
+  },
+  "login": {
+    "username": "Username",
+    "password": "Password",
+    "submit": "Log In",
+    "error": "Login failed!",
+    "success": "Logged in as {{username}}"
+  },
+  "error": {
+    "form": {
+      "empty": "This field cannot be empty"
+    }
+  },
+  "notification": {
+    "success": "Success!",
+    "error": "Error:"
+  }
+}

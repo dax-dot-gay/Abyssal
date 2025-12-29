@@ -1,11 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import svgr from "vite-plugin-svgr";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        svgr({
+            include: "**/*.svg?react",
+        }),
+        react(),
+    ],
     server: {
         https: {
             key: readFileSync(join("certs", "key.pem")),
@@ -17,7 +23,6 @@ export default defineConfig({
             "/api": {
                 target: "https://localhost:5174",
                 changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/api/, ""),
                 secure: false,
             },
         },
