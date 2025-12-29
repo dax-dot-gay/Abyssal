@@ -8,6 +8,7 @@ use rocket::{
     http::Status,
     request::{self, FromRequest},
 };
+use rocket_okapi::{r#gen::OpenApiGenerator, request::{OpenApiFromRequest, RequestHeaderInput}};
 
 use crate::{models::Model, types::{Config, Uuid}};
 
@@ -58,6 +59,16 @@ impl<'r, T: Model> FromRequest<'r>
                 crate::Error::MissingState(String::from("mongodb::Client")),
             ))
         }
+    }
+}
+
+impl<'r, T: Model> OpenApiFromRequest<'r> for Collection<T> {
+    fn from_request_input(
+        _gen: &mut OpenApiGenerator,
+        _name: String,
+        _required: bool,
+    ) -> rocket_okapi::Result<RequestHeaderInput> {
+        Ok(RequestHeaderInput::None)
     }
 }
 

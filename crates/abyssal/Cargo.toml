@@ -20,7 +20,7 @@ rocket_okapi = { workspace = true, features = [
   "rocket_db_pools",
   "rocket_ws",
   "secrets",
-  "swagger",
+  "rapidoc",
   "uuid"
 ] }
 rocket_ws = { workspace = true }

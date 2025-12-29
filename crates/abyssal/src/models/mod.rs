@@ -11,7 +11,7 @@ pub trait Model: Serialize + DeserializeOwned + Clone + Debug + Send + Sync {
 }
 
 pub mod user;
-pub use user::{User, UserKind, UserMethods};
+pub use user::{User, UserKind, UserMethods, GenericUser};
 
 pub mod token;
 pub use token::Token;

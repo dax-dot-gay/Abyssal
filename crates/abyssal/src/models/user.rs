@@ -7,8 +7,9 @@ use argon2::{
 use base64::Engine as _;
 use bson::doc;
 use getset::{CloneGetters, WithSetters};
+use okapi::openapi3::{Object, SecurityRequirement, SecurityScheme, SecuritySchemeData};
 use rocket::{Request, http::Status, request::{self, FromRequest}};
-use rocket_okapi::JsonSchema;
+use rocket_okapi::{JsonSchema, r#gen::OpenApiGenerator, request::{OpenApiFromRequest, RequestHeaderInput}};
 use serde::{Deserialize, Serialize};
 use spire_enum::prelude::{delegate_impl, delegated_enum};
 use strum::Display;
@@ -319,5 +320,36 @@ impl<'r> FromRequest<'r> for User {
             Ok(resolved) => request::Outcome::Success(resolved),
             Err(err) => request::Outcome::Error((Status::new(err.metadata().status), err)),
         }
+    }
+}
+
+impl<'a> OpenApiFromRequest<'a> for User {
+    fn from_request_input(
+        _gen: &mut OpenApiGenerator,
+        _name: String,
+        _required: bool,
+    ) -> rocket_okapi::Result<RequestHeaderInput> {
+        let security_scheme = SecurityScheme {
+            description: Some("Authorization header containing either `Token <session token>` or `Application <client_id>:<client_secret>".to_owned()),
+            data: SecuritySchemeData::Http { scheme: "Token | Application".to_string(), bearer_format: Some("Token | Application".to_string()) },
+            extensions: Object::default()
+        };
+        let mut security_req = SecurityRequirement::new();
+        security_req.insert("HttpAuth".to_owned(), Vec::new());
+        Ok(RequestHeaderInput::Security("HttpAuth".to_owned(), security_scheme, security_req))
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+pub struct GenericUser {
+    pub id: Uuid,
+    pub kind: UserKind,
+    pub name: String,
+    pub groups: Vec<String>
+}
+
+impl From<User> for GenericUser {
+    fn from(value: User) -> Self {
+        Self { id: value.id(), kind: value.kind(), name: value.name(), groups: value.groups() }
     }
 }

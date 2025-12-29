@@ -4,10 +4,12 @@ use rocket_okapi::{
 };
 
 mod misc;
+mod users;
 
 pub fn routes(settings: &OpenApiSettings) -> (Vec<rocket::Route>, OpenApi) {
     get_nested_endpoints_and_docs! {
-        "/" => misc::routes(settings)
+        "/" => misc::routes(settings),
+        "/users" => users::routes(settings)
     }
 }
 
@@ -15,7 +17,7 @@ pub fn routes(settings: &OpenApiSettings) -> (Vec<rocket::Route>, OpenApi) {
 macro_rules! export_routes {
     [$($routes:ident),+] => {
         pub fn routes(settings: &rocket_okapi::settings::OpenApiSettings) -> (Vec<rocket::Route>, okapi::openapi3::OpenApi) {
-            rocket_okapi::openapi_get_routes_spec![settings: $($routes).+]
+            rocket_okapi::openapi_get_routes_spec![settings: $($routes),+]
         }
     };
 }

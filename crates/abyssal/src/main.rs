@@ -7,16 +7,18 @@ pub mod util;
 
 use bson::doc;
 use clap::Parser;
-pub use error::{Error, ErrorMeta, Result};
+pub use error::{ApiResult, Error, ErrorMeta, Result};
 use rocket::{Build, Rocket, fairing::AdHoc, launch};
-use rocket_okapi::settings::OpenApiSettings;
+use rocket_okapi::{
+    rapidoc::{ApiConfig, GeneralConfig, HideShowConfig, RapiDocConfig, make_rapidoc}, settings::{OpenApiSettings, UrlObject}
+};
 use spire_enum::prelude::EnumExtensions;
 
 async fn launch_inner() -> Rocket<Build> {
     let args = cli::AbyssalCli::parse();
     let config = types::Config::load(args.config_files).expect("Failed to load configuration!");
     let rocket_config = config.rocket_config();
-    let (routes, _) = routes::routes(&OpenApiSettings::default());
+    let (routes, openapi_spec) = routes::routes(&OpenApiSettings::default());
 
     rocket::custom(rocket_config)
         .manage(
@@ -25,7 +27,27 @@ async fn launch_inner() -> Rocket<Build> {
                 .unwrap(),
         )
         .manage(config.clone())
+        .manage(openapi_spec)
         .mount("/api", routes)
+        .mount(
+            "/api/doc/openapi",
+            make_rapidoc(&RapiDocConfig {
+                general: GeneralConfig {
+                    spec_urls: vec![UrlObject::new("General", "../openapi.json")],
+                    ..Default::default()
+                },
+                hide_show: HideShowConfig {
+                    allow_spec_url_load: false,
+                    allow_spec_file_load: false,
+                    ..Default::default()
+                },
+                api: ApiConfig {
+                    server_url: "/api".to_string(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )
         .attach(AdHoc::on_liftoff("Ensure admin user", |rck| {
             Box::pin(async move {
                 let config = rck.state::<types::Config>().unwrap();
@@ -34,7 +56,7 @@ async fn launch_inner() -> Rocket<Build> {
                     config.database().database(),
                 );
                 if let Some(existing) = collection
-                    .find_one(doc! {"username": config.authentication().admin_user()})
+                    .find_one(doc! {"name": config.authentication().admin_user()})
                     .await
                     .unwrap()
                 {

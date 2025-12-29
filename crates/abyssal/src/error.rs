@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use argon2::password_hash;
+use rocket::serde::json::Json;
 
 #[abyssal_macros::make_error]
 pub enum Error {
@@ -40,3 +41,4 @@ impl Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+pub type ApiResult<T> = std::result::Result<Json<T>, Error>;
