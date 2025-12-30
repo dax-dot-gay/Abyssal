@@ -22,6 +22,23 @@
         }
       }
     },
+    "/info/permissions": {
+      "get": {
+        "operationId": "get_info_permissions",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionsDescription"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/login": {
       "post": {
         "tags": [
@@ -204,6 +221,120 @@
             "type": "string"
           }
         }
+      },
+      "PermissionsDescription": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "name",
+              "node_type"
+            ],
+            "properties": {
+              "node_type": {
+                "type": "string",
+                "enum": [
+                  "leaf"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "name",
+              "node_type",
+              "nodes"
+            ],
+            "properties": {
+              "node_type": {
+                "type": "string",
+                "enum": [
+                  "branch"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PermissionsDescription"
+                }
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "name",
+              "node_type",
+              "parameter"
+            ],
+            "properties": {
+              "node_type": {
+                "type": "string",
+                "enum": [
+                  "string_leaf"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "parameter": {
+                "type": "string"
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "name",
+              "node_type",
+              "nodes",
+              "parameter"
+            ],
+            "properties": {
+              "node_type": {
+                "type": "string",
+                "enum": [
+                  "string_branch"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PermissionsDescription"
+                }
+              },
+              "parameter": {
+                "type": "string"
+              },
+              "comment": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
       },
       "LoginResponse": {
         "type": "object",

@@ -25,15 +25,17 @@ make_permissions! {
     Permissions => {
         Authentication => {
             Users => {
-                Read;
-            };
+                View "Only allows viewing user configurations";
+            } "Allows modification of user configurations";
             Oidc => {
-                Read;
-            };
+                View "Only allows viewing OIDC provider information";
+            } "Allows modification of OIDC provider(s)";
             Applications => {
-                Owned;
-                Others;
-            };
+                Owned "Only allows management of owned applications";
+                Others => "application" {
+                    View "Only allows viewing this application";
+                } "Allows management of other applications (app name in <application>)";
+            } "Allows modification of API clients";
         };
     }
 }
