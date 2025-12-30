@@ -250,7 +250,7 @@ fn render_branch(
         }
     })?);
 
-    let name_repr = name.to_string();
+    let name_repr = name.to_string().to_case(Case::Snake);
     let comment_repr = if let Some(c) = comment {
         syn::parse2::<Expr>(quote! {Some(#c.to_string())})?
     } else {
@@ -315,7 +315,7 @@ impl Node {
                     } else {
                         syn::parse2::<Expr>(quote! {None})?
                     };
-                    let name_repr = name.to_string();
+                    let name_repr = name.to_string().to_case(Case::Snake);
                     let out = syn::parse2::<Expr>(quote! {
                         #description_ident::Leaf{
                             name: #name_repr.to_string(),
@@ -347,7 +347,7 @@ impl Node {
                     } else {
                         syn::parse2::<Expr>(quote! {None})?
                     };
-                    let name_repr = name.to_string();
+                    let name_repr = name.to_string().to_case(Case::Snake);
                     syn::parse2::<Expr>(quote! {
                         #description_ident::StringLeaf{
                             name: #name_repr.to_string(),
