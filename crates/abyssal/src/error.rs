@@ -29,14 +29,21 @@ pub enum Error {
     #[error(format = "Missing/invalid authorization header or cookie", code = "auth.missing", status = 401)]
     MissingAuthorization,
 
-    #[error(format = "UUID encoding/decoding error: {0:?}", arc, from)]
-    Uuid(uuid::Error)
+    #[error(format = "UUID encoding/decoding error: {0:?}", arc, from, code = "server.uuid")]
+    Uuid(uuid::Error),
+
+    #[error(format = "Unknown permission string: {0}", code = "server.bad_permission")]
+    UnknownPermission(String)
 }
 
 impl Error {
     pub fn invalid_user_type(expected: impl IntoIterator<Item = impl Display>) -> Self {
         let array = expected.into_iter().map(|v| v.to_string()).collect::<Vec<_>>();
         Self::InvalidUserType(array.join(", "))
+    }
+
+    pub fn unknown_permission(permission: impl Into<String>) -> Self {
+        Self::UnknownPermission(permission.into())
     }
 }
 

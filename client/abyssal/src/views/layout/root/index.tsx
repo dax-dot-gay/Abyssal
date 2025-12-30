@@ -22,6 +22,7 @@ import {
     TbFolderFilled,
     TbLogout,
     TbSearch,
+    TbServerCog,
     TbSettingsFilled,
     TbShieldFilled,
     TbUser,
@@ -160,6 +161,11 @@ export function AppLayout() {
                                 {api.user.kind}
                             </Text>
                         </Stack>
+                        {api.user.kind === "owner" && (
+                            <ActionIcon size="lg" variant="light">
+                                <TbServerCog size={20} />
+                            </ActionIcon>
+                        )}
                         <ActionIcon size="lg" variant="light">
                             <TbSettingsFilled size={20} />
                         </ActionIcon>
