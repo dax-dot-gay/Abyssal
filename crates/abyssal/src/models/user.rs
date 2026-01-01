@@ -2,19 +2,34 @@ use std::str::FromStr;
 
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
-    password_hash::{Error as PasswordHashError, SaltString, rand_core::{OsRng, RngCore}},
+    password_hash::{
+        Error as PasswordHashError, SaltString,
+        rand_core::{OsRng, RngCore},
+    },
 };
 use base64::Engine as _;
 use bson::doc;
 use getset::{CloneGetters, WithSetters};
 use okapi::openapi3::{Object, SecurityRequirement, SecurityScheme, SecuritySchemeData};
-use rocket::{Request, http::Status, request::{self, FromRequest}};
-use rocket_okapi::{JsonSchema, r#gen::OpenApiGenerator, request::{OpenApiFromRequest, RequestHeaderInput}};
+use rocket::{
+    Request,
+    http::Status,
+    request::{self, FromRequest},
+};
+use rocket_okapi::{
+    JsonSchema,
+    r#gen::OpenApiGenerator,
+    request::{OpenApiFromRequest, RequestHeaderInput},
+};
 use serde::{Deserialize, Serialize};
 use spire_enum::prelude::{delegate_impl, delegated_enum};
 use strum::Display;
 
-use crate::{models::Model, types::Uuid, util::Collection};
+use crate::{
+    models::Model,
+    types::{PermissionSet, Uuid},
+    util::Collection,
+};
 
 #[derive(
     Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq, Eq, PartialOrd, Ord, Hash, Display,
@@ -38,6 +53,9 @@ pub struct LocalUser {
 
     #[serde(default)]
     groups: Vec<String>,
+
+    #[serde(default)]
+    permissions: PermissionSet,
 }
 
 impl LocalUser {
@@ -47,6 +65,7 @@ impl LocalUser {
             name,
             password,
             groups: Vec::new(),
+            permissions: PermissionSet::new(),
         }
     }
 }
@@ -86,6 +105,9 @@ pub struct OidcUser {
 
     #[serde(default)]
     oidc_groups: Vec<String>,
+
+    #[serde(default)]
+    permissions: PermissionSet,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, CloneGetters, WithSetters)]
@@ -100,11 +122,22 @@ pub struct ApplicationUser {
     owner: Uuid,
     client_id: String,
     client_secret: String,
+
+    #[serde(default)]
+    permissions: PermissionSet,
 }
 
 impl ApplicationUser {
     pub(self) fn new(name: String, owner: Uuid, client_id: String, client_secret: String) -> Self {
-        Self { id: Uuid::new(), name, groups: vec![], owner, client_id, client_secret }
+        Self {
+            id: Uuid::new(),
+            name,
+            owner,
+            client_id,
+            client_secret,
+            groups: Vec::new(),
+            permissions: PermissionSet::new(),
+        }
     }
 }
 
@@ -218,7 +251,10 @@ impl User {
         Ok(OwnerUser::new(username, hashed_password).into())
     }
 
-    pub fn create_application(name: impl Into<String>, owner: impl Into<Uuid>) -> crate::Result<(Self, String)> {
+    pub fn create_application(
+        name: impl Into<String>,
+        owner: impl Into<Uuid>,
+    ) -> crate::Result<(Self, String)> {
         let mut client_id_bytes = [0u8; 32];
         let mut client_secret_bytes = [0u8; 64];
 
@@ -228,7 +264,10 @@ impl User {
         let client_id = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(client_id_bytes);
         let client_secret = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(client_secret_bytes);
         let hashed_secret = Self::hash_value(client_secret.clone())?;
-        Ok((ApplicationUser::new(name.into(), owner.into(), client_id, hashed_secret).into(), client_secret))
+        Ok((
+            ApplicationUser::new(name.into(), owner.into(), client_id, hashed_secret).into(),
+            client_secret,
+        ))
     }
 
     pub fn verify_password(&self, password: impl Into<String>) -> crate::Result<bool> {
@@ -249,9 +288,7 @@ impl User {
         let secret = secret.into();
         let hashed = match self.clone() {
             User::Application(user) => Ok(user.client_secret()),
-            _ => Err(crate::Error::invalid_user_type([
-                UserKind::Application
-            ])),
+            _ => Err(crate::Error::invalid_user_type([UserKind::Application])),
         }?;
 
         Self::verify_value(secret, hashed)
@@ -270,11 +307,19 @@ impl User {
     }
 
     async fn from_request_inner(req: &Request<'_>) -> crate::Result<Self> {
-        if let Some(authorization) = req.headers().get_one("Authorization").map(|v| v.to_string()) {
+        if let Some(authorization) = req
+            .headers()
+            .get_one("Authorization")
+            .map(|v| v.to_string())
+        {
             match authorization.split_once(" ") {
                 Some(("Token", token)) => {
-                    let tokens = Collection::<crate::models::Token>::from_request(req).await.unwrap();
-                    let users = Collection::<crate::models::User>::from_request(req).await.unwrap();
+                    let tokens = Collection::<crate::models::Token>::from_request(req)
+                        .await
+                        .unwrap();
+                    let users = Collection::<crate::models::User>::from_request(req)
+                        .await
+                        .unwrap();
                     if let Ok(Some(existing_token)) = tokens.get(Uuid::from_str(token)?).await {
                         if let Ok(Some(existing_user)) = existing_token.resolve_user(users).await {
                             let refreshed = existing_token.refresh_token();
@@ -287,11 +332,15 @@ impl User {
                     } else {
                         Err(crate::Error::MissingAuthorization)
                     }
-                },
+                }
                 Some(("Application", app_auth)) => {
-                    let users = Collection::<crate::models::User>::from_request(req).await.unwrap();
+                    let users = Collection::<crate::models::User>::from_request(req)
+                        .await
+                        .unwrap();
                     if let Some((client_id, client_secret)) = app_auth.split_once(":") {
-                        if let Ok(Some(existing_user)) = users.find_one(doc! {"client_id": client_id}).await {
+                        if let Ok(Some(existing_user)) =
+                            users.find_one(doc! {"client_id": client_id}).await
+                        {
                             if existing_user.verify_client_secret(client_secret.to_string())? {
                                 Ok(existing_user)
                             } else {
@@ -303,8 +352,8 @@ impl User {
                     } else {
                         Err(crate::Error::MissingAuthorization)
                     }
-                },
-                _ => Err(crate::Error::MissingAuthorization)
+                }
+                _ => Err(crate::Error::MissingAuthorization),
             }
         } else {
             Err(crate::Error::MissingAuthorization)
@@ -336,7 +385,11 @@ impl<'a> OpenApiFromRequest<'a> for User {
         };
         let mut security_req = SecurityRequirement::new();
         security_req.insert("HttpAuth".to_owned(), Vec::new());
-        Ok(RequestHeaderInput::Security("HttpAuth".to_owned(), security_scheme, security_req))
+        Ok(RequestHeaderInput::Security(
+            "HttpAuth".to_owned(),
+            security_scheme,
+            security_req,
+        ))
     }
 }
 
@@ -345,11 +398,16 @@ pub struct GenericUser {
     pub id: Uuid,
     pub kind: UserKind,
     pub name: String,
-    pub groups: Vec<String>
+    pub groups: Vec<String>,
 }
 
 impl From<User> for GenericUser {
     fn from(value: User) -> Self {
-        Self { id: value.id(), kind: value.kind(), name: value.name(), groups: value.groups() }
+        Self {
+            id: value.id(),
+            kind: value.kind(),
+            name: value.name(),
+            groups: value.groups(),
+        }
     }
 }

@@ -15,6 +15,3 @@ pub use user::{User, UserKind, UserMethods, GenericUser};
 
 pub mod token;
 pub use token::Token;
-
-pub mod permission;
-pub use permission::{Permissions, PermissionsDescription};
