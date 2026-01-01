@@ -39,6 +39,35 @@
         }
       }
     },
+    "/info/permissions/{path}": {
+      "get": {
+        "operationId": "get_info_permissions_at_path",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "allow_reserved": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionsDescription",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/login": {
       "post": {
         "tags": [
@@ -227,6 +256,7 @@
           {
             "type": "object",
             "required": [
+              "depends_on",
               "name",
               "node_type"
             ],
@@ -243,12 +273,19 @@
               "comment": {
                 "type": "string",
                 "nullable": true
+              },
+              "depends_on": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           },
           {
             "type": "object",
             "required": [
+              "depends_on",
               "name",
               "node_type",
               "nodes"
@@ -272,12 +309,19 @@
               "comment": {
                 "type": "string",
                 "nullable": true
+              },
+              "depends_on": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           },
           {
             "type": "object",
             "required": [
+              "depends_on",
               "name",
               "node_type",
               "parameter"
@@ -298,12 +342,19 @@
               "comment": {
                 "type": "string",
                 "nullable": true
+              },
+              "depends_on": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           },
           {
             "type": "object",
             "required": [
+              "depends_on",
               "name",
               "node_type",
               "nodes",
@@ -331,6 +382,12 @@
               "comment": {
                 "type": "string",
                 "nullable": true
+              },
+              "depends_on": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }

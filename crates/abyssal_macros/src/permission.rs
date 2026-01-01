@@ -2,15 +2,15 @@ use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    Arm, Expr, Ident, ItemEnum, ItemImpl, Token, Variant, braced, parse::{Parse, discouraged::Speculative}, punctuated::Punctuated
+    Arm, Expr, ExprArray, ExprLit, Ident, ItemEnum, ItemImpl, Lit, Token, Variant, braced, bracketed, parse::{Parse, ParseBuffer, discouraged::Speculative}, punctuated::Punctuated
 };
 
 #[derive(Clone, Debug)]
 enum Node {
-    Leaf { name: Ident, comment: Option<String> },
-    Branch { name: Ident, nodes: Vec<Node>, comment: Option<String> },
-    StringLeaf { name: Ident, parameter: String, comment: Option<String> },
-    StringBranch { name: Ident, nodes: Vec<Node>, parameter: String, comment: Option<String> }
+    Leaf { name: Ident, metadata: Metadata },
+    Branch { name: Ident, nodes: Vec<Node>, metadata: Metadata },
+    StringLeaf { name: Ident, parameter: String, metadata: Metadata },
+    StringBranch { name: Ident, nodes: Vec<Node>, parameter: String, metadata: Metadata }
 }
 
 impl Node {
@@ -24,33 +24,93 @@ impl Node {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+struct Metadata {
+    pub comment: Option<String>,
+    pub depends: Vec<String>
+}
+
+impl Parse for Metadata {
+    fn parse(content: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut meta = Self::default();
+        while !content.is_empty() {
+            let key = content.parse::<Ident>()?;
+            content.parse::<Token![=]>()?;
+            let value = content.parse::<Expr>()?;
+            if !content.is_empty() {
+                content.parse::<Token![,]>()?;
+            }
+            match key.to_string().as_str() {
+                "comment" => {
+                    if let Expr::Lit(ExprLit {lit: Lit::Str(lit_str), ..}) = value {
+                        meta.comment = Some(lit_str.value());
+                    } else {
+                        Err(content.error("Expected a string literal for `comment`"))?;
+                    }
+                },
+                "depends" => {
+                    if let Expr::Array(ExprArray {elems, ..}) = value {
+                        let mut depends_on = Vec::<String>::new();
+                        for elem in elems {
+                            if let Expr::Lit(ExprLit {lit: Lit::Str(lit_str), ..}) = elem {
+                                depends_on.push(lit_str.value());
+                            } else {
+                                Err(content.error("Expected string literal"))?;
+                            }
+                        }
+
+                        meta.depends = depends_on;
+                    } else {
+                        Err(content.error("Expected an array of subpaths"))?;
+                    }
+                },
+                other => {
+                    Err(content.error(format!("Unexpected metadata key \"{other}\"")))?;
+                }
+            }
+        }
+
+        Ok(meta)
+    }
+}
+
+impl Metadata {
+    pub fn definitely_parse(input: &ParseBuffer<'_>) -> syn::Result<syn::Result<Metadata>> {
+        let forked = input.fork();
+        let content;
+        bracketed!(content in forked);
+        input.advance_to(&forked);
+        Ok(content.parse::<Metadata>())
+    }
+}
+
 #[derive(Clone, Debug)]
 struct Tree {
-    name: Ident,
-    nodes: Vec<Node>,
+    pub name: Ident,
+    pub nodes: Vec<Node>,
 }
 
 impl Parse for Node {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let name = input.parse::<Ident>()?;
-        let ahead = input.fork();
         if input.peek(Token![;]) {
             input.parse::<Token![;]>()?;
-            Ok(Self::Leaf { name, comment: None })
+            Ok(Self::Leaf { name, metadata: Metadata::default() })
+        } else if let Ok(metadata) = Metadata::definitely_parse(&input) {
+            input.parse::<Token![;]>()?;
+            Ok(Self::Leaf { name, metadata: metadata? })
         } else if input.peek(Token![=>]) {
             input.parse::<Token![=>]>()?;
 
             let ahead = input.fork();
             if let Ok(parameter) = ahead.parse::<syn::LitStr>().map(|v| v.value()) {
                 input.advance_to(&ahead);
-                let ahead = input.fork();
                 if input.peek(Token![;]) {
                     input.parse::<Token![;]>()?;
-                    Ok(Self::StringLeaf { name, parameter, comment: None })
-                } else if let Ok(comment) = ahead.parse::<syn::LitStr>() {
-                    input.advance_to(&ahead);
+                    Ok(Self::StringLeaf { name, parameter, metadata: Metadata::default() })
+                } else if let Ok(metadata) = Metadata::definitely_parse(&input) {
                     input.parse::<Token![;]>()?;
-                    Ok(Self::StringLeaf { name, parameter, comment: Some(comment.value()) })
+                    Ok(Self::StringLeaf { name, parameter, metadata: metadata? })
                 } else {
                     let content;
                     braced!(content in input);
@@ -60,17 +120,11 @@ impl Parse for Node {
                         nodes.push(content.parse::<Node>()?);
                     }
 
-                    let ahead = input.fork();
-                    let comment = if let Ok(comment) = ahead.parse::<syn::LitStr>() {
-                        input.advance_to(&ahead);
-                        Some(comment.value())
-                    } else {
-                        None
-                    };
+                    let metadata = Metadata::definitely_parse(&input).unwrap_or(Ok(Metadata::default()))?;
 
                     input.parse::<Token![;]>()?;
 
-                    Ok(Self::StringBranch { name, nodes, parameter, comment })
+                    Ok(Self::StringBranch { name, nodes, parameter, metadata })
                 }
             } else {
                 let content;
@@ -82,22 +136,12 @@ impl Parse for Node {
                     nodes.push(content.parse::<Node>()?);
                 }
                 
-                let ahead = input.fork();
-                let comment = if let Ok(comment) = ahead.parse::<syn::LitStr>() {
-                    input.advance_to(&ahead);
-                    Some(comment.value())
-                } else {
-                    None
-                };
+                let metadata = Metadata::definitely_parse(&input).unwrap_or(Ok(Metadata::default()))?;
 
                 input.parse::<Token![;]>()?;
 
-                Ok(Self::Branch { name, nodes, comment })
+                Ok(Self::Branch { name, nodes, metadata })
             }
-        } else if let Ok(comment) = ahead.parse::<syn::LitStr>() {
-            input.advance_to(&ahead);
-            input.parse::<Token![;]>()?;
-            Ok(Self::Leaf { name, comment: Some(comment.value()) })
         } else {
             Err(input.error(format!(
                 "Unexpected token! Expected `;` (for a leaf node) or `=>` (for a branch node)"
@@ -131,7 +175,7 @@ fn render_branch(
     nodes: Vec<Node>,
     is_string_branch: bool,
     parameter: Option<String>,
-    comment: Option<String>
+    metadata: Metadata
 ) -> manyhow::Result<(Variant, Vec<ItemEnum>, Vec<ItemImpl>, Vec<ItemImpl>, Vec<ItemImpl>, Expr)> {
     let methods_ident = format_ident!("{root}Methods");
     let description_ident = format_ident!("{root}Description");
@@ -216,7 +260,7 @@ fn render_branch(
     }
 
     node_enums.push(syn::parse2(quote! {
-        #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default)]
+        #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default, Eq, PartialEq)]
         #[serde(rename_all = "snake_case", tag = "name")]
         pub enum #enum_ident {
             #[default]
@@ -251,11 +295,13 @@ fn render_branch(
     })?);
 
     let name_repr = name.to_string().to_case(Case::Snake);
+    let Metadata {comment, depends, ..} = metadata;
     let comment_repr = if let Some(c) = comment {
         syn::parse2::<Expr>(quote! {Some(#c.to_string())})?
     } else {
         syn::parse2::<Expr>(quote! {None})?
     };
+    let depends_on_repr = syn::parse2::<Expr>(quote! {vec![#(#depends.to_string()),*]})?;
     if let Some(param) = parameter {
         node_methods.push(syn::parse2(quote! {
             impl #methods_ident for #enum_ident {
@@ -264,7 +310,8 @@ fn render_branch(
                         name: #name_repr.to_string(),
                         nodes: vec![#described_nodes],
                         parameter: #param.to_string(),
-                        comment: #comment_repr
+                        comment: #comment_repr,
+                        depends_on: #depends_on_repr
                     }
                 }
             }
@@ -276,7 +323,8 @@ fn render_branch(
                     #description_ident::Branch{
                         name: #name_repr.to_string(),
                         nodes: vec![#described_nodes],
-                        comment: #comment_repr
+                        comment: #comment_repr,
+                        depends_on: #depends_on_repr
                     }
                 }
             }
@@ -303,29 +351,32 @@ impl Node {
     ) -> manyhow::Result<(Variant, Vec<ItemEnum>, Vec<ItemImpl>, Vec<ItemImpl>, Vec<ItemImpl>, Expr)> {
         let description_ident = format_ident!("{root}Description");
         match self.clone() {
-            Node::Leaf { name, comment } => Ok((
+            Node::Leaf { name, metadata } => Ok((
                 syn::parse2::<Variant>(quote! {#name})?,
                 vec![],
                 vec![],
                 vec![],
                 vec![],
                 {
+                    let name_repr = name.to_string().to_case(Case::Snake);
+                    let Metadata {comment, depends, ..} = metadata;
                     let comment_repr = if let Some(c) = comment {
                         syn::parse2::<Expr>(quote! {Some(#c.to_string())})?
                     } else {
                         syn::parse2::<Expr>(quote! {None})?
                     };
-                    let name_repr = name.to_string().to_case(Case::Snake);
+                    let depends_on_repr = syn::parse2::<Expr>(quote! {vec![#(#depends.to_string()),*]})?;
                     let out = syn::parse2::<Expr>(quote! {
                         #description_ident::Leaf{
                             name: #name_repr.to_string(),
-                            comment: #comment_repr
+                            comment: #comment_repr,
+                            depends_on: #depends_on_repr
                         }
                     })?;
                     out
                 }
             )),
-            Node::Branch { name, nodes, comment } => render_branch(
+            Node::Branch { name, nodes, metadata } => render_branch(
                 root.clone(),
                 parent.clone(),
                 format_ident!("{name}Permission"),
@@ -333,31 +384,34 @@ impl Node {
                 nodes,
                 false,
                 None,
-                comment
+                metadata
             ),
-            Node::StringLeaf { name, parameter, comment } => Ok((
+            Node::StringLeaf { name, parameter, metadata } => Ok((
                 syn::parse2::<Variant>(quote! {#name {parameter: Option<String>}})?,
                 vec![],
                 vec![],
                 vec![],
                 vec![],
                 {
+                    let name_repr = name.to_string().to_case(Case::Snake);
+                    let Metadata {comment, depends, ..} = metadata;
                     let comment_repr = if let Some(c) = comment {
                         syn::parse2::<Expr>(quote! {Some(#c.to_string())})?
                     } else {
                         syn::parse2::<Expr>(quote! {None})?
                     };
-                    let name_repr = name.to_string().to_case(Case::Snake);
+                    let depends_on_repr = syn::parse2::<Expr>(quote! {vec![#(#depends.to_string()),*]})?;
                     syn::parse2::<Expr>(quote! {
                         #description_ident::StringLeaf{
                             name: #name_repr.to_string(),
                             parameter: #parameter.to_string(),
-                            comment: #comment_repr
+                            comment: #comment_repr,
+                            depends_on: #depends_on_repr
                         }
                     })?
                 }
             )),
-            Node::StringBranch { name, nodes, parameter, comment } => render_branch(
+            Node::StringBranch { name, nodes, parameter, metadata } => render_branch(
                 root.clone(),
                 parent.clone(),
                 format_ident!("{name}Permission"),
@@ -365,7 +419,7 @@ impl Node {
                 nodes,
                 true,
                 Some(parameter),
-                comment
+                metadata
             )
         }
     }
@@ -373,7 +427,7 @@ impl Node {
 
 pub fn impl_permissions(input: TokenStream) -> manyhow::Result<TokenStream> {
     let Tree { name, nodes } = syn::parse2::<Tree>(input)?;
-    let (_, enums, try_froms, intos, methods, _) = render_branch(name.clone(), None, name.clone(), name.clone(), nodes, false, None, None)?;
+    let (_, enums, try_froms, intos, methods, _) = render_branch(name.clone(), None, name.clone(), name.clone(), nodes, false, None, Metadata::default())?;
 
     let methods_ident = format_ident!("{name}Methods");
     let description_ident = format_ident!("{name}Description");
@@ -384,23 +438,74 @@ pub fn impl_permissions(input: TokenStream) -> manyhow::Result<TokenStream> {
         pub enum #description_ident {
             Leaf {
                 name: String,
-                comment: Option<String>
+                comment: Option<String>,
+                depends_on: Vec<String>
             },
             Branch {
                 name: String,
                 nodes: Vec<#description_ident>,
-                comment: Option<String>
+                comment: Option<String>,
+                depends_on: Vec<String>
             },
             StringLeaf {
                 name: String,
                 parameter: String,
-                comment: Option<String>
+                comment: Option<String>,
+                depends_on: Vec<String>
             },
             StringBranch {
                 name: String,
                 nodes: Vec<#description_ident>,
                 parameter: String,
-                comment: Option<String>
+                comment: Option<String>,
+                depends_on: Vec<String>
+            }
+        }
+
+        impl #description_ident {
+            pub fn name(&self) -> String {
+                match self.clone() {
+                    Self::Leaf {name, ..} => name,
+                    Self::Branch {name, ..} => name,
+                    Self::StringLeaf {name, ..} => name,
+                    Self::StringBranch {name, ..} => name,
+                }
+            }
+
+            pub fn comment(&self) -> Option<String> {
+                match self.clone() {
+                    Self::Leaf {comment, ..} => comment,
+                    Self::Branch {comment, ..} => comment,
+                    Self::StringLeaf {comment, ..} => comment,
+                    Self::StringBranch {comment, ..} => comment,
+                }
+            }
+
+            pub fn depends_on(&self) -> Vec<String> {
+                match self.clone() {
+                    Self::Leaf {depends_on, ..} => depends_on,
+                    Self::Branch {depends_on, ..} => depends_on,
+                    Self::StringLeaf {depends_on, ..} => depends_on,
+                    Self::StringBranch {depends_on, ..} => depends_on,
+                }
+            }
+
+            pub fn nodes(&self) -> Option<Vec<Self>> {
+                match self.clone() {
+                    Self::Leaf {..} => None,
+                    Self::Branch {nodes, ..} => Some(nodes),
+                    Self::StringLeaf {..} => None,
+                    Self::StringBranch {nodes, ..} => Some(nodes),
+                }
+            }
+
+            pub fn parameter(&self) -> Option<String> {
+                match self.clone() {
+                    Self::Leaf {..} => None,
+                    Self::Branch {..} => None,
+                    Self::StringLeaf {parameter, ..} => Some(parameter),
+                    Self::StringBranch {parameter, ..} => Some(parameter),
+                }
             }
         }
 
