@@ -38,7 +38,6 @@ use crate::{
 #[strum(serialize_all = "snake_case")]
 pub enum UserKind {
     Local,
-    Owner,
     Oidc,
     Application,
 }
@@ -66,29 +65,6 @@ impl LocalUser {
             password,
             groups: Vec::new(),
             permissions: PermissionSet::new(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, CloneGetters, WithSetters)]
-#[getset(get_clone = "pub", set_with = "pub")]
-pub struct OwnerUser {
-    #[serde(default)]
-    id: Uuid,
-    name: String,
-    password: String,
-
-    #[serde(default)]
-    groups: Vec<String>,
-}
-
-impl OwnerUser {
-    pub(self) fn new(name: String, password: String) -> Self {
-        Self {
-            id: Uuid::new(),
-            name,
-            password,
-            groups: Vec::new(),
         }
     }
 }
@@ -145,6 +121,7 @@ pub trait UserMethods {
     fn id(&self) -> Uuid;
     fn name(&self) -> String;
     fn groups(&self) -> Vec<String>;
+    fn permissions(&self) -> PermissionSet;
 
     fn with_id(self, id: Uuid) -> Self;
     fn with_name(self, name: String) -> Self;
@@ -160,7 +137,6 @@ pub trait UserMethods {
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum User {
     Local(LocalUser),
-    Owner(OwnerUser),
     Oidc(OidcUser),
     Application(ApplicationUser),
 }
@@ -170,6 +146,7 @@ impl UserMethods for User {
     fn id(&self) -> Uuid;
     fn name(&self) -> String;
     fn groups(&self) -> Vec<String>;
+    fn permissions(&self) -> PermissionSet;
     fn with_id(self, id: Uuid) -> Self;
     fn with_name(self, name: String) -> Self;
     fn with_groups(self, groups: Vec<String>) -> Self;
@@ -206,7 +183,6 @@ impl User {
     pub fn kind(&self) -> UserKind {
         match self.clone() {
             User::Local(..) => UserKind::Local,
-            User::Owner(..) => UserKind::Owner,
             User::Oidc(..) => UserKind::Oidc,
             User::Application(..) => UserKind::Application,
         }
@@ -241,16 +217,6 @@ impl User {
         Ok(LocalUser::new(username, hashed_password).into())
     }
 
-    pub fn create_owner(
-        username: impl Into<String>,
-        password: impl Into<String>,
-    ) -> crate::Result<Self> {
-        let username = username.into();
-        let password = password.into();
-        let hashed_password = Self::hash_value(password)?;
-        Ok(OwnerUser::new(username, hashed_password).into())
-    }
-
     pub fn create_application(
         name: impl Into<String>,
         owner: impl Into<Uuid>,
@@ -274,10 +240,8 @@ impl User {
         let password = password.into();
         let hashed = match self.clone() {
             User::Local(user) => Ok(user.password()),
-            User::Owner(user) => Ok(user.password()),
             _ => Err(crate::Error::invalid_user_type([
-                UserKind::Local,
-                UserKind::Owner,
+                UserKind::Local
             ])),
         }?;
 
@@ -298,10 +262,8 @@ impl User {
         let hashed_password = Self::hash_value(new_password)?;
         match self {
             User::Local(user) => Ok(user.with_password(hashed_password).into()),
-            User::Owner(user) => Ok(user.with_password(hashed_password).into()),
             _ => Err(crate::Error::invalid_user_type([
-                UserKind::Local,
-                UserKind::Owner,
+                UserKind::Local
             ])),
         }
     }
@@ -399,6 +361,7 @@ pub struct GenericUser {
     pub kind: UserKind,
     pub name: String,
     pub groups: Vec<String>,
+    pub permissions: PermissionSet
 }
 
 impl From<User> for GenericUser {
@@ -408,6 +371,7 @@ impl From<User> for GenericUser {
             kind: value.kind(),
             name: value.name(),
             groups: value.groups(),
+            permissions: value.permissions()
         }
     }
 }

@@ -20,9 +20,70 @@ export type GenericUser = {
     kind: UserKind;
     name: string;
     groups: Array<string>;
+    permissions: ArrayOfPermission;
 };
 
-export type UserKind = 'local' | 'owner' | 'oidc' | 'application';
+export type UserKind = 'local' | 'oidc' | 'application';
+
+export type ArrayOfPermission = Array<Permission>;
+
+export type Permission = {
+    permission: PermissionEnum;
+} | {
+    permission: PermissionEnum2;
+    /**
+     * Root allowed to create invites to
+     */
+    root: Uuid;
+    /**
+     * What level of access to grant
+     */
+    capability: PermissionCapability;
+    /**
+     * Whether to allow access to invites owned by other users
+     */
+    administrate: boolean;
+} | {
+    permission: PermissionEnum3;
+    /**
+     * Roots allowed to create upload targets for
+     */
+    root: Uuid;
+    /**
+     * What level of access to grant
+     */
+    capability: PermissionCapability;
+    /**
+     * Whether to allow access to upload targets owned by other users
+     */
+    administrate: boolean;
+} | {
+    permission: PermissionEnum4;
+    /**
+     * Root ID
+     */
+    root: Uuid;
+    /**
+     * Top-level directory
+     */
+    top_level: RootTopLevel;
+    /**
+     * What level of access to grant
+     */
+    capability: PermissionCapability;
+};
+
+export type PermissionCapability = _0Enum | _1Enum | _2Enum;
+
+export type RootTopLevel = {
+    kind: KindEnum;
+} | {
+    kind: KindEnum2;
+    parent: string;
+} | {
+    kind: KindEnum3;
+    path: string;
+};
 
 export type ErrorMeta = {
     status: number;
@@ -35,6 +96,35 @@ export type LoginRequest = {
     username: string;
     password: string;
 };
+
+export type PermissionEnum = 'administrator';
+
+export type PermissionEnum2 = 'invites';
+
+export type PermissionEnum3 = 'upload_targets';
+
+export type PermissionEnum4 = 'root_directory';
+
+/**
+ * View existing <resource>
+ */
+export type _0Enum = 'read';
+
+/**
+ * Edit existing <resource>
+ */
+export type _1Enum = 'edit';
+
+/**
+ * Create/destroy existing <resource>
+ */
+export type _2Enum = 'manage';
+
+export type KindEnum = 'root';
+
+export type KindEnum2 = 'home';
+
+export type KindEnum3 = 'directory';
 
 export type GetInfoData = {
     body?: never;

@@ -22,52 +22,6 @@
         }
       }
     },
-    "/info/permissions": {
-      "get": {
-        "operationId": "get_info_permissions",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PermissionsDescription"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/info/permissions/{path}": {
-      "get": {
-        "operationId": "get_info_permissions_at_path",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "allow_reserved": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PermissionsDescription",
-                  "nullable": true
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/users/login": {
       "post": {
         "tags": [
@@ -251,148 +205,6 @@
           }
         }
       },
-      "PermissionsDescription": {
-        "oneOf": [
-          {
-            "type": "object",
-            "required": [
-              "depends_on",
-              "name",
-              "node_type"
-            ],
-            "properties": {
-              "node_type": {
-                "type": "string",
-                "enum": [
-                  "leaf"
-                ]
-              },
-              "name": {
-                "type": "string"
-              },
-              "comment": {
-                "type": "string",
-                "nullable": true
-              },
-              "depends_on": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "depends_on",
-              "name",
-              "node_type",
-              "nodes"
-            ],
-            "properties": {
-              "node_type": {
-                "type": "string",
-                "enum": [
-                  "branch"
-                ]
-              },
-              "name": {
-                "type": "string"
-              },
-              "nodes": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/PermissionsDescription"
-                }
-              },
-              "comment": {
-                "type": "string",
-                "nullable": true
-              },
-              "depends_on": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "depends_on",
-              "name",
-              "node_type",
-              "parameter"
-            ],
-            "properties": {
-              "node_type": {
-                "type": "string",
-                "enum": [
-                  "string_leaf"
-                ]
-              },
-              "name": {
-                "type": "string"
-              },
-              "parameter": {
-                "type": "string"
-              },
-              "comment": {
-                "type": "string",
-                "nullable": true
-              },
-              "depends_on": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "required": [
-              "depends_on",
-              "name",
-              "node_type",
-              "nodes",
-              "parameter"
-            ],
-            "properties": {
-              "node_type": {
-                "type": "string",
-                "enum": [
-                  "string_branch"
-                ]
-              },
-              "name": {
-                "type": "string"
-              },
-              "nodes": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/PermissionsDescription"
-                }
-              },
-              "parameter": {
-                "type": "string"
-              },
-              "comment": {
-                "type": "string",
-                "nullable": true
-              },
-              "depends_on": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ]
-      },
       "LoginResponse": {
         "type": "object",
         "required": [
@@ -417,7 +229,8 @@
           "groups",
           "id",
           "kind",
-          "name"
+          "name",
+          "permissions"
         ],
         "properties": {
           "id": {
@@ -434,6 +247,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/Array_of_Permission"
           }
         }
       },
@@ -441,9 +257,230 @@
         "type": "string",
         "enum": [
           "local",
-          "owner",
           "oidc",
           "application"
+        ]
+      },
+      "Array_of_Permission": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Permission"
+        }
+      },
+      "Permission": {
+        "oneOf": [
+          {
+            "description": "Supersedes all other permissions Also is *required* to allow access to: - OIDC management - User/group management - Permission assignment",
+            "type": "object",
+            "required": [
+              "permission"
+            ],
+            "properties": {
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "administrator"
+                ]
+              }
+            }
+          },
+          {
+            "description": "Invite management",
+            "type": "object",
+            "required": [
+              "administrate",
+              "capability",
+              "permission",
+              "root"
+            ],
+            "properties": {
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "invites"
+                ]
+              },
+              "root": {
+                "description": "Root allowed to create invites to",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Uuid"
+                  }
+                ]
+              },
+              "capability": {
+                "description": "What level of access to grant",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PermissionCapability"
+                  }
+                ]
+              },
+              "administrate": {
+                "description": "Whether to allow access to invites owned by other users",
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "description": "Upload dropbox management",
+            "type": "object",
+            "required": [
+              "administrate",
+              "capability",
+              "permission",
+              "root"
+            ],
+            "properties": {
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "upload_targets"
+                ]
+              },
+              "root": {
+                "description": "Roots allowed to create upload targets for",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Uuid"
+                  }
+                ]
+              },
+              "capability": {
+                "description": "What level of access to grant",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PermissionCapability"
+                  }
+                ]
+              },
+              "administrate": {
+                "description": "Whether to allow access to upload targets owned by other users",
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "description": "Access to a root directory",
+            "type": "object",
+            "required": [
+              "capability",
+              "permission",
+              "root",
+              "top_level"
+            ],
+            "properties": {
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "root_directory"
+                ]
+              },
+              "root": {
+                "description": "Root ID",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Uuid"
+                  }
+                ]
+              },
+              "top_level": {
+                "description": "Top-level directory",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/RootTopLevel"
+                  }
+                ]
+              },
+              "capability": {
+                "description": "What level of access to grant",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PermissionCapability"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "PermissionCapability": {
+        "oneOf": [
+          {
+            "description": "View existing <resource>",
+            "type": "string",
+            "enum": [
+              "read"
+            ]
+          },
+          {
+            "description": "Edit existing <resource>",
+            "type": "string",
+            "enum": [
+              "edit"
+            ]
+          },
+          {
+            "description": "Create/destroy existing <resource>",
+            "type": "string",
+            "enum": [
+              "manage"
+            ]
+          }
+        ]
+      },
+      "RootTopLevel": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "root"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "parent"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "home"
+                ]
+              },
+              "parent": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "path"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "directory"
+                ]
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          }
         ]
       },
       "ErrorMeta": {

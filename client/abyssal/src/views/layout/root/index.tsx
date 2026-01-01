@@ -149,7 +149,9 @@ export function AppLayout() {
                         gap="xs"
                     >
                         <Avatar size="md">
-                            {api.user.kind === "owner" ? (
+                            {api.user.permissions.filter(
+                                (v) => v.permission === "administrator",
+                            ).length > 0 ? (
                                 <TbShieldFilled size={20} />
                             ) : (
                                 <TbUser size={20} />
@@ -161,7 +163,9 @@ export function AppLayout() {
                                 {api.user.kind}
                             </Text>
                         </Stack>
-                        {api.user.kind === "owner" && (
+                        {api.user.permissions.filter(
+                            (v) => v.permission === "administrator",
+                        ).length > 0 && (
                             <ActionIcon size="lg" variant="light">
                                 <TbServerCog size={20} />
                             </ActionIcon>

@@ -12,7 +12,8 @@ use rocket::{Build, Rocket, fairing::AdHoc, launch};
 use rocket_okapi::{
     rapidoc::{ApiConfig, GeneralConfig, HideShowConfig, RapiDocConfig, make_rapidoc}, settings::{OpenApiSettings, UrlObject}
 };
-use spire_enum::prelude::EnumExtensions;
+
+use crate::models::UserMethods;
 
 async fn launch_inner() -> Rocket<Build> {
     let args = cli::AbyssalCli::parse();
@@ -69,17 +70,18 @@ async fn launch_inner() -> Rocket<Build> {
                     .await
                     .unwrap()
                 {
-                    if !existing.is_var::<models::user::OwnerUser>() {
+                    if !existing.permissions().has_permission(types::Permission::Administrator) {
                         panic!(
-                            "Another user with the default administrator's username already exists!"
+                            "Another user with the default administrator's username already exists and is not an admin!"
                         );
                     }
                 } else {
-                    let created = models::User::create_owner(
+                    let created = models::User::create_local(
                         config.authentication().admin_user(),
                         config.authentication().admin_password(),
                     )
                     .unwrap();
+                    created.permissions().set_permission(types::Permission::Administrator);
                     collection.save(created).await.unwrap();
                 }
             })
