@@ -4,20 +4,23 @@ pub mod models;
 pub mod routes;
 pub mod types;
 pub mod util;
+pub use types::Config;
 
 use bson::doc;
 use clap::Parser;
 pub use error::{ApiResult, Error, ErrorMeta, Result};
 use rocket::{Build, Rocket, fairing::AdHoc, launch};
 use rocket_okapi::{
-    rapidoc::{ApiConfig, GeneralConfig, HideShowConfig, RapiDocConfig, make_rapidoc}, settings::{OpenApiSettings, UrlObject}
+    rapidoc::{ApiConfig, GeneralConfig, HideShowConfig, RapiDocConfig, make_rapidoc},
+    settings::{OpenApiSettings, UrlObject},
 };
 
 use crate::models::UserMethods;
 
 async fn launch_inner() -> Rocket<Build> {
     let args = cli::AbyssalCli::parse();
-    let config = types::Config::load(args.config_files.clone()).expect("Failed to load configuration!");
+    let config =
+        types::Config::load(args.config_files.clone()).expect("Failed to load configuration!");
     let rocket_config = config.rocket_config();
     let (routes, openapi_spec) = routes::routes(&OpenApiSettings::default());
 
@@ -30,6 +33,16 @@ async fn launch_inner() -> Rocket<Build> {
         std::fs::write(spec_path, serialized).unwrap();
     }
 
+    if !config.filesystem().filesystem().is_dir() {
+        std::fs::create_dir_all(config.filesystem().filesystem())
+            .expect("Should be able to create the filesystem root");
+    }
+
+    if !config.filesystem().filesystem().join(".abyssal").is_dir() {
+        std::fs::create_dir_all(config.filesystem().filesystem().join(".abyssal"))
+            .expect("Should be able to create the .abyssal directory");
+    }
+
     rocket::custom(rocket_config)
         .manage(
             mongodb::Client::with_uri_str(config.database().url())
@@ -37,6 +50,14 @@ async fn launch_inner() -> Rocket<Build> {
                 .unwrap(),
         )
         .manage(config.clone())
+        .manage(
+            sled::Config::default()
+                .mode(sled::Mode::HighThroughput)
+                .use_compression(true)
+                .path(config.filesystem().filesystem().join(".abyssal/meta.db"))
+                .open()
+                .expect("Should be able to open/create meta.db")
+        )
         .manage(openapi_spec)
         .mount("/api", routes)
         .mount(
@@ -86,6 +107,7 @@ async fn launch_inner() -> Rocket<Build> {
                 }
             })
         }))
+        .attach(util::generate_resources())
 }
 
 #[launch]

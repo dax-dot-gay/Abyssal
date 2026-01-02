@@ -1,0 +1,103 @@
+use std::env;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::io::Write;
+use std::path::Path;
+use std::path::PathBuf;
+
+use convert_case::Case;
+use convert_case::Casing;
+
+const IGNORE: &'static [&'static str] = &[
+    "lib",
+    "index.d.ts",
+    "index.js",
+    "index.mjs",
+    "LICENSE",
+    "package.json",
+    "README.md",
+];
+
+fn main() {
+    let out_dir = env::var_os("OUT_DIR").unwrap();
+    let dest_path = Path::new(&out_dir).join("icons.json");
+    let react_icons_path =
+        Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("react-icons-ref");
+    let icon_paths = react_icons_path
+        .read_dir()
+        .unwrap()
+        .filter_map(|dir| {
+            if let Ok(entry) = dir {
+                if let Some(fname) = entry.path().file_name() {
+                    if IGNORE.contains(&fname.to_string_lossy().to_string().as_str()) {
+                        None
+                    } else {
+                        if entry.path().join("index.js").is_file() {
+                            Some(entry.path().join("index.js"))
+                        } else {
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<PathBuf>>();
+
+    let mut output = File::create(dest_path).unwrap();
+    output.write(b"{\n").unwrap();
+    let mut next_index = 0usize;
+    for path in icon_paths.clone() {
+        next_index += 1;
+        let icon_family = path
+            .parent()
+            .unwrap()
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+        output
+            .write(format!("  \"{}\": {{\n", icon_family).as_bytes())
+            .unwrap();
+        println!("cargo::rerun-if-changed=react-icons-ref/{}", icon_family);
+        let input = File::open(path.clone()).unwrap();
+        let buf_read = BufReader::new(input);
+        let mut lines = buf_read.lines();
+        while let Some(Ok(line)) = lines.next() {
+            if line.trim().starts_with("module.exports.") {
+                let export_line = line.trim().to_string();
+                let data_line = lines.next().unwrap().unwrap().trim().to_string();
+                let icon_name = {
+                    let (_, tail) = export_line.split_once("module.exports.").unwrap();
+                    let (head, _) = tail.split_once(" = ").unwrap();
+                    let transformed = {
+                        let x = head.trim().to_case(Case::Snake);
+                        let (_, t) = x.split_once("_").unwrap();
+                        t.to_string()
+                    };
+                    transformed
+                };
+                let icon_data = {
+                    let (_, tail) = data_line.split_once("return GenIcon(").unwrap();
+                    let (head, _) = tail.split_once(")(props);").unwrap();
+                    head.trim().to_string()
+                };
+
+                output
+                    .write(format!("    \"{}\": {}\n", icon_name, icon_data).as_bytes())
+                    .unwrap();
+            }
+        }
+
+        if icon_paths.len() == next_index {
+            output.write(b"  }\n").unwrap();
+        } else {
+            output.write(b"  },\n").unwrap();
+        }
+    }
+    output.write(b"}").unwrap();
+}

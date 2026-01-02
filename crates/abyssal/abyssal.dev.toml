@@ -14,3 +14,10 @@ admin_password = "admin"
 [database]
 url = "mongodb://abyssal:abyssal@localhost:27017"
 database = "abyssal"
+
+[filesystem]
+filesystem = "/mnt/shared"
+enforce_ownership = false
+
+[filesystem.directories]
+root = {display_name = "Root", path = "/"}

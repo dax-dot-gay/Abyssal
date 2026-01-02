@@ -4,9 +4,7 @@ use std::{
 
 use bson::doc;
 use rocket::{
-    Request,
-    http::Status,
-    request::{self, FromRequest},
+    Orbit, Request, Rocket, http::Status, request::{self, FromRequest}
 };
 use rocket_okapi::{r#gen::OpenApiGenerator, request::{OpenApiFromRequest, RequestHeaderInput}};
 
@@ -75,6 +73,11 @@ impl<'r, T: Model> OpenApiFromRequest<'r> for Collection<T> {
 impl<T: Model> Collection<T> {
     pub fn new(client: mongodb::Client, database: impl Into<String>) -> Self {
         Self(client.database(database.into().as_str()).collection::<T>(T::collection()))
+    }
+
+    pub fn from_rocket(rocket: &Rocket<Orbit>) -> Self {
+        let config = rocket.state::<crate::Config>().cloned().unwrap();
+        Self::new(rocket.state::<mongodb::Client>().cloned().unwrap(), config.database().database())
     }
 
     pub async fn get(&self, id: impl Into<Uuid>) -> crate::Result<Option<T>> {

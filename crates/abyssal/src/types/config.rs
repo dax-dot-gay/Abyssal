@@ -155,7 +155,7 @@ pub struct DatabaseConfig {
     url: String,
 
     #[serde(default = "DatabaseConfig::_d_database", alias = "db")]
-    database: String
+    database: String,
 }
 
 impl DatabaseConfig {
@@ -168,7 +168,66 @@ impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
             url: String::from("mongodb://localhost:27017"),
-            database: Self::_d_database()
+            database: Self::_d_database(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters)]
+#[serde(rename_all = "snake_case")]
+#[getset(get_clone = "pub")]
+pub struct FilesystemRootConfig {
+    #[serde(default)]
+    display_name: Option<String>,
+    path: PathBuf,
+}
+
+impl Default for FilesystemRootConfig {
+    fn default() -> Self {
+        Self {
+            display_name: Some("Root".to_string()),
+            path: "/".into(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, CloneGetters)]
+#[serde(rename_all = "snake_case")]
+#[getset(get_clone = "pub")]
+pub struct FilesystemConfig {
+    /// Root directory of the entire file server
+    #[serde(default = "FilesystemConfig::_d_filesystem")]
+    filesystem: PathBuf,
+
+    /// Allow modification of roots from the web UI
+    #[serde(default = "FilesystemConfig::_d_allow_root_modification")]
+    allow_root_modification: bool,
+
+    /// Filesystem roots to automatically create/configure
+    #[serde(default = "FilesystemConfig::_d_directories")]
+    directories: HashMap<String, FilesystemRootConfig>,
+}
+
+impl FilesystemConfig {
+    fn _d_filesystem() -> PathBuf {
+        PathBuf::from("/")
+    }
+
+    fn _d_allow_root_modification() -> bool {
+        true
+    }
+
+    fn _d_directories() -> HashMap<String, FilesystemRootConfig> {
+        HashMap::from_iter(vec![("root".to_string(), FilesystemRootConfig::default())])
+    }
+}
+
+impl Default for FilesystemConfig {
+    fn default() -> Self {
+        Self {
+            filesystem: Self::_d_filesystem(),
+            allow_root_modification: Self::_d_allow_root_modification(),
+            directories: Self::_d_directories()
         }
     }
 }
@@ -185,6 +244,9 @@ pub struct Config {
 
     #[serde(default, alias = "db")]
     database: DatabaseConfig,
+
+    #[serde(default, alias = "fs")]
+    filesystem: FilesystemConfig,
 }
 
 impl Config {

@@ -33,7 +33,10 @@ pub enum Error {
     Uuid(uuid::Error),
 
     #[error(format = "Unknown permission string: {0}", code = "server.bad_permission")]
-    UnknownPermission(String)
+    UnknownPermission(String),
+
+    #[error(format = "IO error: {0:?}", arc, from, code = "server.io")]
+    Io(std::io::Error)
 }
 
 impl Error {
