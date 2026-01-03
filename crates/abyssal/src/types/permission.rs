@@ -54,6 +54,7 @@ pub enum Permission {
     /// - OIDC management
     /// - User/group management
     /// - Permission assignment
+    /// - Root directory management
     Administrator,
 
     /// Invite management
